@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "557866127065",
+    "firebase_url": "https://volunteer-impact-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "volunteer-impact",
+    "storage_bucket": "volunteer-impact.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:557866127065:android:1808b98553b28f4ef0f8c8",
+        "android_client_info": {
+          "package_name": "com.example.HeartOfExperian"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUo7_A-1LzKD3CkHDpSnBKYus3WJIAscg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:557866127065:android:df57343bd1b98ad2f0f8c8",
+        "android_client_info": {
+          "package_name": "volunteer.impact"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUo7_A-1LzKD3CkHDpSnBKYus3WJIAscg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

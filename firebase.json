@@ -1,0 +1,112 @@
+{
+    "emulators": {
+        "dataconnect": {
+            "dataDir": "dataconnect/.dataconnect/pgliteData"
+        },
+        "apphosting": {
+            "port": 5002,
+            "rootDirectory": "./"
+        },
+        "auth": {
+            "port": 9099
+        },
+        "functions": {
+            "port": 5001
+        },
+        "firestore": {
+            "port": 8080
+        },
+        "database": {
+            "port": 9000
+        },
+        "hosting": {
+            "port": 5000
+        },
+        "pubsub": {
+            "port": 8085
+        },
+        "storage": {
+            "port": 9199
+        },
+        "eventarc": {
+            "port": 9299
+        },
+        "tasks": {
+            "port": 9499
+        },
+        "ui": {
+            "enabled": true
+        },
+        "singleProjectMode": true
+    },
+    "dataconnect": {
+        "source": "dataconnect"
+    },
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    },
+    "functions": [
+        {
+            "source": "functions",
+            "codebase": "default",
+            "predeploy": [
+                "npm --prefix \"$RESOURCE_DIR\" run lint"
+            ],
+            "ignore": [
+                "node_modules",
+                ".git",
+                "firebase-debug.log",
+                "firebase-debug.*.log",
+                "*.local"
+            ]
+        }
+    ],
+    "hosting": {
+        "public": "public",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+                "source": "**",
+                "destination": "/index.html"
+            }
+        ]
+    },
+    "storage": {
+        "rules": "storage.rules"
+    },
+    "remoteconfig": {
+        "template": "remoteconfig.template.json"
+    },
+    "extensions": {},
+    "database": {
+        "rules": "database.rules.json"
+    },
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "volunteer-impact",
+                    "appId": "1:557866127065:android:1808b98553b28f4ef0f8c8",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "volunteer-impact",
+                    "configurations": {
+                        "android": "1:557866127065:android:1808b98553b28f4ef0f8c8",
+                        "ios": "1:557866127065:ios:11c9562bd9f086ebf0f8c8",
+                        "macos": "1:557866127065:ios:11c9562bd9f086ebf0f8c8",
+                        "web": "1:557866127065:web:d2a2eec6ad327dcef0f8c8",
+                        "windows": "1:557866127065:web:69a69c0abd0ff012f0f8c8"
+                    }
+                }
+            }
+        }
+    }
+}
