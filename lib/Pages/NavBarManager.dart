@@ -13,7 +13,7 @@ class NavBarManager extends StatefulWidget {
   final int initialIndex;
   final SearchVolunteeringPage searchVolunteeringPage;
   final RecordVolunteeringPage recordVolunteeringPage;
-  final HomepageOrganisation feedPage;
+  final Homepage feedPage;
   //final ProfilePage profilePage;
   final LeaderboardPage leaderboardPage;
 

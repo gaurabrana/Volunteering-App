@@ -17,7 +17,7 @@ class CommonHelper {
         builder: (context) => NavBarManager(
           initialIndex: indexToNavigate,
           searchVolunteeringPage: SearchVolunteeringPage(),
-          feedPage: HomepageOrganisation(
+          feedPage: Homepage(
             mainNavigatorKey: mainNavigatorKey,
             logInNavigatorKey: logInNavigatorKey,
           ),

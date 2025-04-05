@@ -395,7 +395,7 @@ class _LogInFormState extends State<_LogInForm> {
         builder: (context) => NavBarManager(
           initialIndex: 0,
           searchVolunteeringPage: SearchVolunteeringPage(),
-          feedPage: HomepageOrganisation(
+          feedPage: Homepage(
               mainNavigatorKey: widget.mainNavigatorKey,
               logInNavigatorKey: widget.logInNavigatorKey),
           //profilePage: ProfilePage(),

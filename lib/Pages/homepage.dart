@@ -7,20 +7,20 @@ import 'Messages.dart';
 import 'Settings/SharedPreferences.dart';
 import 'common_helper.dart';
 
-class HomepageOrganisation extends StatefulWidget {
+class Homepage extends StatefulWidget {
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> logInNavigatorKey;
 
-  const HomepageOrganisation(
+  const Homepage(
       {super.key,
       required this.mainNavigatorKey,
       required this.logInNavigatorKey});
 
   @override
-  State<StatefulWidget> createState() => HomepageOrganisationState();
+  State<StatefulWidget> createState() => HomepageState();
 }
 
-class HomepageOrganisationState extends State<HomepageOrganisation> {
+class HomepageState extends State<Homepage> {
   bool _hasUnreadChats = false;
   bool hasUnreadChatsLoading = false;
   UserDetails? _userDetails;

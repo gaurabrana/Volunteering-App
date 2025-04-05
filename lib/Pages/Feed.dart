@@ -320,7 +320,7 @@ class FeedPageState extends State<FeedPage> {
               builder: (context) => NavBarManager(
                     initialIndex: 1,
                     searchVolunteeringPage: SearchVolunteeringPage(),
-                    feedPage: HomepageOrganisation(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
+                    feedPage: Homepage(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
                     leaderboardPage: LeaderboardPage(),
@@ -370,7 +370,7 @@ class FeedPageState extends State<FeedPage> {
               builder: (context) => NavBarManager(
                     initialIndex: 1,
                     searchVolunteeringPage: SearchVolunteeringPage(),
-                    feedPage: HomepageOrganisation(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
+                    feedPage: Homepage(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
                     leaderboardPage: LeaderboardPage(),
@@ -447,7 +447,7 @@ class FeedPageState extends State<FeedPage> {
                     // todo dont make here.
                     initialIndex: 4,
                     searchVolunteeringPage: SearchVolunteeringPage(),
-                    feedPage: HomepageOrganisation(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
+                    feedPage: Homepage(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
                     leaderboardPage: LeaderboardPage(),
