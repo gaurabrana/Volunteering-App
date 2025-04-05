@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'Pages/homepage_organisation.dart';
+import 'Pages/homepage.dart';
 import 'firebase_options.dart'; // Import Firebase Options
 
 import 'Pages/Authentication/SignIn.dart';
@@ -73,7 +73,7 @@ class MainApplication extends StatelessWidget {
           builder: (context) => NavBarManager(
             initialIndex: 0,
             searchVolunteeringPage: SearchVolunteeringPage(),
-            feedPage: HomepageOrganisation(
+            feedPage: Homepage(
               mainNavigatorKey: mainNavigationKey,
               logInNavigatorKey: loginNavigationKey,
             ),

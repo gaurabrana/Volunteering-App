@@ -7,7 +7,7 @@ import 'Leaderboard.dart';
 import 'Profile.dart';
 import 'RecordVolunteering.dart';
 import 'SearchVolunteering.dart';
-import 'homepage_organisation.dart';
+import 'homepage.dart';
 
 class NavBarManager extends StatefulWidget {
   final int initialIndex;
