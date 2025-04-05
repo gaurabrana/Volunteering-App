@@ -21,6 +21,59 @@ class UserDAO {
     }
   }
 
+  static Future<void> storeOrganisationDetails({
+    required String userId,
+    required String mission,
+    required String activities,
+    required String projects,
+    required String benefactors,
+    required String certificate,
+  }) async {
+    try {
+      // Store data in Firestore under 'organisation_info' collection
+      await FirebaseFirestore.instance
+          .collection('organisation_info')
+          .doc(userId)
+          .set({
+        'UID': userId,
+        'mission': mission,
+        'activities': activities,
+        'completedProjects': projects,
+        'benefactors': benefactors,
+        'certificate':
+            certificate, // Certificate could be a URL or file reference
+      });
+
+      print("Organisation details saved successfully!");
+    } catch (e) {
+      print('Error storing organisation details: $e');
+    }
+  }
+
+  // Method to fetch organisation details by userId
+  static Future<Map<String, dynamic>?> fetchOrganisationDetails(
+      String userId) async {
+    try {
+      // Get the document reference for the given userId
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('organisation_info')
+          .doc(userId)
+          .get();
+
+      // Check if the document exists
+      if (snapshot.exists) {
+        // Return the document data as a Map
+        return snapshot.data() as Map<String, dynamic>;
+      } else {
+        print('No organisation details found for userId: $userId');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching organisation details: $e');
+      return null;
+    }
+  }
+
   static Future<UserDetails?> getUserDetails(String? userId) async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -37,7 +90,7 @@ class UserDAO {
         querySnapshot.docs.map((doc) => UserDetails.fromSnapshot(doc)).toList();
 
     return users.isNotEmpty ? users.first : null;
-  }  
+  }
 
   static Future<List<String>> getAllUserIds() async {
     List<String> uids = [];

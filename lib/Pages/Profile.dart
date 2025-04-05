@@ -2,6 +2,7 @@ import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventRegistrationsDA
 import 'package:HeartOfExperian/Pages/CustomWidgets/VolunteeringTypePieChart.dart';
 import 'package:HeartOfExperian/Pages/Settings/Settings.dart';
 import 'package:HeartOfExperian/Pages/Settings/SharedPreferences.dart';
+import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -35,12 +36,9 @@ class ProfilePage extends StatefulWidget {
 class ProfilePageState extends State<ProfilePage> {
   late bool isPhotoLoading;
   late bool isNameLoading;
-  late bool areUserDetailsLoading;
   bool areFollowingLoading = true;
   late bool areHistoricalHoursDetailsLoading;
   bool areVolunteeringEventsLoading = true;
-
-  late UserDetails _userDetails;
   late String _photoURL;
   late int following;
 
@@ -56,15 +54,12 @@ class ProfilePageState extends State<ProfilePage> {
   int _financialYearShownOnGraph = 24;
   int selectedYearIndex = 0;
 
-  bool _5_hour_badge_earned = false;
-  bool _10_hour_badge_earned = false;
-  bool _15_hour_badge_earned = false;
-  bool _30_hour_badge_earned = false;
-  bool _50_hour_badge_earned = false;
-  bool _100_hour_badge_earned = false;
-
   late List<VolunteeringEvent> upcomingVolunteeringEvents = [];
   late List<VolunteeringEvent> completedVolunteeringEvents = [];
+
+  UserDetails? _userDetails; // Store the user details
+  bool _isLoading = true; // Loading state
+  Map<String, dynamic>? organisationDetails;
 
   @override
   void initState() {
@@ -77,7 +72,6 @@ class ProfilePageState extends State<ProfilePage> {
       _photoURL = "";
       isPhotoLoading = true;
       isNameLoading = true;
-      areUserDetailsLoading = true;
       _hoursThisMonth = 0;
       _hoursThisYear = 0;
       _hoursAllTime = 0;
@@ -85,12 +79,6 @@ class ProfilePageState extends State<ProfilePage> {
       isVolunteeringHistoryLoading = true;
       _volunteeringHistory = [];
       _financialYearShownOnGraph = 24;
-      _5_hour_badge_earned = false;
-      _10_hour_badge_earned = false;
-      _15_hour_badge_earned = false;
-      _30_hour_badge_earned = false;
-      _50_hour_badge_earned = false;
-      _100_hour_badge_earned = false;
       following = 0;
       upcomingVolunteeringEvents = [];
       completedVolunteeringEvents = [];
@@ -102,9 +90,9 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchData() async {
     _initialiseData();
+    _fetchUserDetails();
 
     await _fetchProfilePhoto();
-    await _fetchUserDetails();
     await _fetchHistoricalHours();
     await _fetchAllVolunteeringHistory();
     await _fetchNumberFollowing();
@@ -140,13 +128,17 @@ class ProfilePageState extends State<ProfilePage> {
     try {
       UserDetails? userDetails =
           await SignInSharedPreferences.getCurrentUserDetails();
-      if (userDetails != null) {
-        setState(() {
-          _userDetails = userDetails!;
-          areUserDetailsLoading = false;
-        });
+      setState(() {
+        _userDetails = userDetails;
+        _isLoading = false; // Data fetched, no longer loading
+      });
+      if (userDetails != null && userDetails.role == UserRole.organisation) {
+        _fetchOrganisationDetails(userDetails.UID);
       }
     } catch (e) {
+      setState(() {
+        _isLoading = false; // Even if there's an error, stop loading
+      });
       print('Error fetching user details: $e');
     }
   }
@@ -188,12 +180,6 @@ class ProfilePageState extends State<ProfilePage> {
         if (volunteeringHistory != null) {
           _volunteeringHistory = volunteeringHistory;
         }
-        _5_hour_badge_earned = _hoursAllTime > 5;
-        _10_hour_badge_earned = _hoursAllTime > 10;
-        _15_hour_badge_earned = _hoursAllTime > 15;
-        _30_hour_badge_earned = _hoursAllTime > 30;
-        _50_hour_badge_earned = _hoursAllTime > 50;
-        _100_hour_badge_earned = _hoursAllTime > 100;
         isVolunteeringHistoryLoading = false;
       });
     } catch (e) {
@@ -245,20 +231,7 @@ class ProfilePageState extends State<ProfilePage> {
                   buildSettingsButton(context),
                   buildProfilePhoto(context),
                   const SizedBox(height: 20),
-                  buildProfileName(context),
-                  buildFollowingButton(context),
-                  const SizedBox(height: 10),
-                  buildHistoricalHoursSection(context),
-                  const SizedBox(height: 25),
-                  buildProfileBadges(context),
-                  const SizedBox(height: 25),
-                  buildVolunteeringGraph(context),
-                  const SizedBox(height: 25),
-                  buildUpcomingVolunteering(context),
-                  const SizedBox(height: 25),
-                  buildCompletedVolunteering(context),
-                  const SizedBox(height: 25),
-                  buildVolunteeringTypePieChart(context),
+                  buildUserInformation(),
                 ],
               ),
             ))));
@@ -363,19 +336,15 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget buildProfileName(BuildContext context) {
-    return Container(
-      child: areUserDetailsLoading
-          ? const CircularProgressIndicator()
-          : Text(
-              _userDetails.name,
-              textAlign: TextAlign.left,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 27,
-                decorationColor: Colors.black,
-              ),
-            ),
+  Widget buildProfileName(BuildContext context, String name) {
+    return Text(
+      name,
+      textAlign: TextAlign.left,
+      style: const TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 27,
+        decorationColor: Colors.black,
+      ),
     );
   }
 
@@ -738,155 +707,6 @@ class ProfilePageState extends State<ProfilePage> {
     return recentYears;
   }
 
-  Widget buildProfileBadges(BuildContext context) {
-    return isVolunteeringHistoryLoading
-        ? const CircularProgressIndicator()
-        : Container(
-            alignment: Alignment.center,
-            padding:
-                const EdgeInsets.only(top: 20, left: 0, right: 0, bottom: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 10,
-                  blurRadius: 15,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (_5_hour_badge_earned)
-                      GestureDetector(
-                        onTap: () {
-                          showCongratulationDialog(
-                              context, 5, 'assets/images/badges/5_hours.png');
-                        },
-                        child: Image.asset(
-                          'assets/images/badges/5_hours.png',
-                          height: 100,
-                          width: 98,
-                        ),
-                      )
-                    else
-                      Image.asset(
-                        'assets/images/badges/locked.png',
-                        height: 100,
-                        width: 98,
-                      ),
-                    if (_10_hour_badge_earned)
-                      GestureDetector(
-                        onTap: () {
-                          showCongratulationDialog(
-                              context, 10, 'assets/images/badges/10_hours.png');
-                        },
-                        child: Image.asset(
-                          'assets/images/badges/10_hours.png',
-                          height: 100,
-                          width: 98,
-                        ),
-                      )
-                    else
-                      Image.asset(
-                        'assets/images/badges/locked.png',
-                        height: 100,
-                        width: 98,
-                      ),
-                    if (_15_hour_badge_earned)
-                      GestureDetector(
-                        onTap: () {
-                          showCongratulationDialog(
-                              context, 15, 'assets/images/badges/15_hours.png');
-                        },
-                        child: Image.asset(
-                          'assets/images/badges/15_hours.png',
-                          height: 100,
-                          width: 98,
-                        ),
-                      )
-                    else
-                      Image.asset(
-                        'assets/images/badges/locked.png',
-                        height: 100,
-                        width: 98,
-                      ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (_30_hour_badge_earned)
-                      GestureDetector(
-                        onTap: () {
-                          showCongratulationDialog(
-                              context, 30, 'assets/images/badges/30_hours.png');
-                        },
-                        child: Image.asset(
-                          'assets/images/badges/30_hours.png',
-                          height: 100,
-                          width: 98,
-                        ),
-                      )
-                    else
-                      Image.asset(
-                        'assets/images/badges/locked.png',
-                        height: 100,
-                        width: 98,
-                      ),
-                    if (_50_hour_badge_earned)
-                      GestureDetector(
-                        onTap: () {
-                          showCongratulationDialog(
-                              context, 50, 'assets/images/badges/50_hours.png');
-                        },
-                        child: Image.asset(
-                          'assets/images/badges/50_hours.png',
-                          height: 100,
-                          width: 98,
-                        ),
-                      )
-                    else
-                      Image.asset(
-                        'assets/images/badges/locked.png',
-                        height: 100,
-                        width: 98,
-                      ),
-                    if (_100_hour_badge_earned)
-                      GestureDetector(
-                        onTap: () {
-                          showCongratulationDialog(context, 100,
-                              'assets/images/badges/100_hours.png');
-                        },
-                        child: Image.asset(
-                          'assets/images/badges/100_hours.png',
-                          height: 100,
-                          width: 98,
-                        ),
-                      )
-                    else
-                      Image.asset(
-                        'assets/images/badges/locked.png',
-                        height: 100,
-                        width: 98,
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          );
-  }
-
   Widget buildUpcomingVolunteering(BuildContext context) {
     List<Widget> getWidgets() {
       List<Widget> cards = [];
@@ -1216,78 +1036,115 @@ class ProfilePageState extends State<ProfilePage> {
           );
   }
 
-  void showCongratulationDialog(
-      BuildContext context, int hours, String badgePhotoURL) {
-    String title = "";
-    String message = "";
+  List<Widget> buildUserProfile() {
+    return [
+      buildFollowingButton(context),
+      const SizedBox(height: 10),
+      buildHistoricalHoursSection(context),
+      const SizedBox(height: 25),
+      buildVolunteeringGraph(context),
+      const SizedBox(height: 25),
+      buildUpcomingVolunteering(context),
+      const SizedBox(height: 25),
+      buildCompletedVolunteering(context),
+      const SizedBox(height: 25),
+      buildVolunteeringTypePieChart(context),
+    ];
+  }
 
-    switch (hours) {
-      case 5:
-        title = "Blossoming Volunteer";
-        message =
-            "Congratulations on completing 5 hours of volunteering! Keep spreading your positivity and watch your garden of impact grow!";
-        break;
-      case 10:
-        title = "Galactic Volunteer";
-        message =
-            "You've reached 10 hours of volunteering! Your impact is out of this world. Keep shining bright!";
-        break;
-      case 15:
-        title = "Soaring Volunteer";
-        message =
-            "You're really taking off! With 15 hours of volunteering, your impact is soaring high. Keep reaching new heights with your generosity and dedication!";
-        break;
-      case 30:
-        title = "Heartfelt Helper";
-        message =
-            "30 hours complete! Your generosity and kindness have touched many hearts. Thank you for spreading love through your volunteer work.";
-        break;
-      case 50:
-        title = "Electrifying Contributor";
-        message =
-            "You've powered through 50 hours of volunteering! Your energy and enthusiasm are electrifying, like a bolt of lightning. Keep sparking positive change!";
-        break;
-      case 100:
-        title = "Volunteer Royalty";
-        message =
-            "You're the reigning champion of volunteering with 100 hours under your belt! Wear your crown proudly, for you are making a real impact on the world.";
-        break;
-      default:
-        title = "Error";
-        message = "";
+  List<Widget> buildOrganisationDetails() {
+    return [
+      SizedBox(
+        height: 20,
+      ),
+      buildSection('Mission', organisationDetails!['mission']),
+      buildSection('Main Activities', organisationDetails!['activities']),
+      buildSection(
+          'Completed Projects', organisationDetails!['completedProjects']),
+      buildSection(
+          'Number of Benefactors', organisationDetails!['benefactors']),
+      buildSection('Certifications', organisationDetails!['certificate']),
+    ];
+  }
+
+  Widget buildUserInformation() {
+    if (_isLoading) {
+      // While loading, show a loading indicator
+      return Center(child: CircularProgressIndicator());
+    } else if (_userDetails == null) {
+      // If there's no user details available
+      return Text("No user details available.");
+    } else {
+      // Build the UI with the fetched user details
+      return Column(
+        children: [
+          buildProfileName(context, _userDetails!.name),
+          if (_userDetails!.role == UserRole.user) ...buildUserProfile(),
+          if (_userDetails!.role == UserRole.organisation &&
+              organisationDetails != null)
+            ...buildOrganisationDetails(),
+        ],
+      );
     }
+  }
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-            title: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 25,
-                decorationColor: Colors.black,
-              ),
-            ),
-            content: Column(mainAxisSize: MainAxisSize.min, children: [
-              Image.asset(
-                badgePhotoURL,
-                height: 200,
-                width: 150,
-              ),
-              SizedBox(height: 10),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 15,
-                  decorationColor: Colors.black,
-                ),
-              ),
-            ]));
-      },
+  // Helper method to build a section with title and content
+  Widget buildSection(String title, String content) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          buildSectionTitle(title),
+          SizedBox(height: 8),
+          buildSectionContent(content),
+        ],
+      ),
     );
+  }
+
+  // Beautified section title
+  Widget buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.deepPurple,
+      ),
+    );
+  }
+
+  // Beautified section content
+  Widget buildSectionContent(String content) {
+    return Text(
+      content,
+      style: TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+        height: 1.5,
+      ),
+    );
+  }
+
+  void _fetchOrganisationDetails(String userId) async {
+    var details = await UserDAO.fetchOrganisationDetails(userId);
+    setState(() {
+      organisationDetails = details;
+    });
   }
 }

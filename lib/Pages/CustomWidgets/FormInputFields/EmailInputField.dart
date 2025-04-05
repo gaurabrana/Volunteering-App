@@ -6,10 +6,17 @@ class EmailInputField extends StatefulWidget {
   final TextEditingController controller;
   final Function(BuildContext, FocusNode) focusNextField;
   final FocusNode focusNode;
+  final bool? isReadOnly;
 
-  const EmailInputField({super.key, required this.controller, this.focusNextField = _defaultFocusNextField, required this.focusNode});
+  const EmailInputField(
+      {super.key,
+      required this.controller,
+      this.focusNextField = _defaultFocusNextField,
+      required this.focusNode,
+      this.isReadOnly});
 
-  static void _defaultFocusNextField(BuildContext context, FocusNode focusNode) {}
+  static void _defaultFocusNextField(
+      BuildContext context, FocusNode focusNode) {}
 
   @override
   State<StatefulWidget> createState() => EmailInputFieldState();
@@ -26,17 +33,21 @@ class EmailInputFieldState extends State<EmailInputField> {
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             spreadRadius: 0.5,
-            blurRadius: 10,//todo show errors inline, validate all forms (Events?)
-            offset: const Offset(2, 3),//todo check handling no results returned from a query
-          ),//todo help options, support page, tutorial
-        ],// todo on date picker have calendar icon. then have text as like select and then replace the date, same for time or duraton
-      ),//todo support text for required/not required
-      child: TextFormField(//todo label text should always be visible
+            blurRadius:
+                10, //todo show errors inline, validate all forms (Events?)
+            offset: const Offset(
+                2, 3), //todo check handling no results returned from a query
+          ), //todo help options, support page, tutorial
+        ], // todo on date picker have calendar icon. then have text as like select and then replace the date, same for time or duraton
+      ), //todo support text for required/not required
+      child: TextFormField(
+          //todo label text should always be visible
           focusNode: widget.focusNode,
-         // textAlign: TextAlign.right,//todo check align to the right
+          // textAlign: TextAlign.right,//todo check align to the right
           onFieldSubmitted: (_) {
             widget.focusNextField(context, widget.focusNode);
           },
+          readOnly: widget.isReadOnly != null && widget.isReadOnly!,
           controller: widget.controller,
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
@@ -51,7 +62,7 @@ class EmailInputFieldState extends State<EmailInputField> {
             ),
             suffixText: UserDAO.defaultDomain,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: widget.isReadOnly != null && widget.isReadOnly! ? const Color.fromARGB(255, 228, 221, 221) : Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(25.0)),
               borderSide: BorderSide.none,
@@ -72,7 +83,8 @@ class EmailInputFieldState extends State<EmailInputField> {
             if (value!.isEmpty) {
               return 'Please enter an email';
             }
-            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value + UserDAO.defaultDomain)) {
+            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                .hasMatch(value + UserDAO.defaultDomain)) {
               return 'Please enter a valid email address';
             }
             return null;

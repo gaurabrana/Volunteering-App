@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../DataAccessLayer/PhotoDAO.dart';
 import '../../DataAccessLayer/UserDAO.dart';
 import '../../Models/UserDetails.dart';
+import '../../constants/enums.dart';
 import '../CustomWidgets/BackButton.dart';
 import '../CustomWidgets/FormInputFields/EmailInputField.dart';
 import '../CustomWidgets/FormInputFields/UsernameInputField.dart';
@@ -29,6 +30,12 @@ class EditProfilePageState extends State<EditProfilePage> {
   bool _savingInProgress = false;
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+  // Controllers to handle text inputs
+  final TextEditingController _missionController = TextEditingController();
+  final TextEditingController _activitiesController = TextEditingController();
+  final TextEditingController _projectsController = TextEditingController();
+  final TextEditingController _benefactorsController = TextEditingController();
+  final TextEditingController _certificateController = TextEditingController();
 
   File? _image;
 
@@ -46,6 +53,9 @@ class EditProfilePageState extends State<EditProfilePage> {
       }
     });
   }
+
+  UserDetails? _userDetails; // Store the user details
+  bool _isLoading = true; // Loading state
 
   @override
   void initState() {
@@ -68,6 +78,7 @@ class EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _fetchData() async {
     initialiseData();
+    await _fetchUserDetails();
     await _fetchProfilePhoto();
     await _fetchNameAndEmail();
   }
@@ -86,6 +97,34 @@ class EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       //print('Error fetching teams: $e');
     }
+  }
+
+  Future<void> _fetchUserDetails() async {
+    try {
+      UserDetails? userDetails =
+          await SignInSharedPreferences.getCurrentUserDetails();
+      setState(() {
+        _userDetails = userDetails;
+        _isLoading = false; // Data fetched, no longer loading
+      });
+      if (userDetails != null && userDetails.role == UserRole.organisation) {
+        _fetchOrganisationDetails(userDetails.UID);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false; // Even if there's an error, stop loading
+      });
+      print('Error fetching user details: $e');
+    }
+  }
+
+  void _fetchOrganisationDetails(String userId) async {
+    var details = await UserDAO.fetchOrganisationDetails(userId);
+    _missionController.text = details!['mission'];
+    _activitiesController.text = details['activities'];
+    _projectsController.text = details['completedProjects'];
+    _benefactorsController.text = details['benefactors'];
+    _certificateController.text = details['certificate'];
   }
 
   Future<void> _fetchNameAndEmail() async {
@@ -214,8 +253,13 @@ class EditProfilePageState extends State<EditProfilePage> {
                           child: isEmailLoading
                               ? const CircularProgressIndicator()
                               : EmailInputField(
+                                  isReadOnly: true,
                                   controller: _emailController,
                                   focusNode: FocusNode())),
+                      if (!_isLoading &&
+                          _userDetails != null &&
+                          _userDetails!.role == UserRole.organisation)
+                        ...buildOrganisationExtraDetails(),
                     ]),
                   ),
                   Container(
@@ -295,9 +339,8 @@ class EditProfilePageState extends State<EditProfilePage> {
         //   await user.updateEmail(_emailController.text); //todo EMAIL UPDATE DOESNT WORK
         // }
         if (_nameController.text != _currentName) {
-          UserDetails? userDetails = await UserDAO.getUserDetails(user.uid);
-          if (userDetails != null) {
-            await UserDAO.updateName(userDetails, _nameController.text);
+          if (_userDetails != null) {
+            await UserDAO.updateName(_userDetails!, _nameController.text);
             UserDetails? userDetailsUpdated =
                 await UserDAO.getUserDetails(user.uid);
             if (userDetailsUpdated != null) {
@@ -306,6 +349,17 @@ class EditProfilePageState extends State<EditProfilePage> {
           } else {
             //print('Error updating details: No user found.');
           }
+        }
+
+        if (_userDetails != null &&
+            _userDetails!.role == UserRole.organisation) {
+          await UserDAO.storeOrganisationDetails(
+              userId: user.uid,
+              mission: _missionController.text,
+              activities: _activitiesController.text,
+              projects: _projectsController.text,
+              benefactors: _benefactorsController.text,
+              certificate: _certificateController.text);
         }
         setState(() {
           _savingInProgress = false;
@@ -329,5 +383,258 @@ class EditProfilePageState extends State<EditProfilePage> {
         content: Text(updateError),
       ));
     }
+  }
+
+  buildOrganisationExtraDetails() {
+    return [
+      SizedBox(height: 20),
+      // Mission Field
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 0.5,
+              blurRadius: 10,
+              offset: const Offset(2, 3),
+            ),
+          ],
+        ),
+        child: TextFormField(
+          controller: _missionController,
+          decoration: InputDecoration(
+            hintText: 'Mission',
+            hintStyle: TextStyle(
+              color: Colors.grey,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(25.0)),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25.0),
+              borderSide: BorderSide(
+                color: Colors.red.shade700,
+                width: 2.0,
+              ),
+            ),
+          ),
+          maxLines: 3,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter the mission';
+            }
+            return null;
+          },
+        ),
+      ),
+      SizedBox(height: 20),
+
+      // Activities Field
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 0.5,
+              blurRadius: 10,
+              offset: const Offset(2, 3),
+            ),
+          ],
+        ),
+        child: TextFormField(
+          controller: _activitiesController,
+          decoration: InputDecoration(
+            hintText: 'Main Activities',
+            hintStyle: TextStyle(
+              color: Colors.grey,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(25.0)),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25.0),
+              borderSide: BorderSide(
+                color: Colors.red.shade700,
+                width: 2.0,
+              ),
+            ),
+          ),
+          maxLines: 3,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter the main activities';
+            }
+            return null;
+          },
+        ),
+      ),
+
+      SizedBox(height: 20),
+
+      // Projects Field
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 0.5,
+              blurRadius: 10,
+              offset: const Offset(2, 3),
+            ),
+          ],
+        ),
+        child: TextFormField(
+          controller: _projectsController,
+          decoration: InputDecoration(
+            hintText: 'Completed Projects',
+            hintStyle: TextStyle(
+              color: Colors.grey,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(25.0)),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25.0),
+              borderSide: BorderSide(
+                color: Colors.red.shade700,
+                width: 2.0,
+              ),
+            ),
+          ),
+          maxLines: 3,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter completed projects';
+            }
+            return null;
+          },
+        ),
+      ),
+      SizedBox(height: 20),
+
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 0.5,
+              blurRadius: 10,
+              offset: const Offset(2, 3),
+            ),
+          ],
+        ),
+        child: TextFormField(
+          controller: _benefactorsController,
+          decoration: InputDecoration(
+            hintText: 'Number of Benefactors',
+            hintStyle: TextStyle(
+              color: Colors.grey,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(25.0)),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25.0),
+              borderSide: BorderSide(
+                color: Colors.red.shade700,
+                width: 2.0,
+              ),
+            ),
+          ),
+          keyboardType: TextInputType.number,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter the number of benefactors';
+            }
+            return null;
+          },
+        ),
+      ),
+      SizedBox(height: 20),
+      // Benefactors Field
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 0.5,
+              blurRadius: 10,
+              offset: const Offset(2, 3),
+            ),
+          ],
+        ),
+        child: TextFormField(
+          controller: _certificateController,
+          decoration: InputDecoration(
+            hintText: 'Certificate Records',
+            hintStyle: TextStyle(
+              color: Colors.grey,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(25.0)),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25.0),
+              borderSide: BorderSide(
+                color: Colors.red.shade700,
+                width: 2.0,
+              ),
+            ),
+          ),
+          maxLines: 3,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter certificates records';
+            }
+            return null;
+          },
+        ),
+      ),
+    ];
   }
 }
