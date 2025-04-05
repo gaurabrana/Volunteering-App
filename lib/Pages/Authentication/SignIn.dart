@@ -18,6 +18,7 @@ import '../Profile.dart';
 import '../RecordVolunteering.dart';
 import '../SearchVolunteering.dart';
 import '../Settings/SharedPreferences.dart';
+import '../homepage_organisation.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -394,10 +395,9 @@ class _LogInFormState extends State<_LogInForm> {
         builder: (context) => NavBarManager(
           initialIndex: 0,
           searchVolunteeringPage: SearchVolunteeringPage(),
-          feedPage: FeedPage(
-            mainNavigatorKey: widget.mainNavigatorKey,
-            logInNavigatorKey: widget.logInNavigatorKey,
-          ),
+          feedPage: HomepageOrganisation(
+              mainNavigatorKey: widget.mainNavigatorKey,
+              logInNavigatorKey: widget.logInNavigatorKey),
           //profilePage: ProfilePage(),
           recordVolunteeringPage: RecordVolunteeringPage(),
           leaderboardPage: LeaderboardPage(),

@@ -7,12 +7,13 @@ import 'Leaderboard.dart';
 import 'Profile.dart';
 import 'RecordVolunteering.dart';
 import 'SearchVolunteering.dart';
+import 'homepage_organisation.dart';
 
 class NavBarManager extends StatefulWidget {
   final int initialIndex;
   final SearchVolunteeringPage searchVolunteeringPage;
   final RecordVolunteeringPage recordVolunteeringPage;
-  final FeedPage feedPage;
+  final HomepageOrganisation feedPage;
   //final ProfilePage profilePage;
   final LeaderboardPage leaderboardPage;
 

@@ -9,7 +9,6 @@ import '../DataAccessLayer/VolunteeringEventDAO.dart';
 import '../DataAccessLayer/VolunteeringEventFavouritesDAO.dart';
 import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
 import '../Models/UserDetails.dart';
-import 'CreateVolunteeringEvent.dart';
 import 'CustomWidgets/VolunteeringEventCard.dart';
 
 class SearchVolunteeringPage extends StatefulWidget {
@@ -98,7 +97,15 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
                     top: 40, left: 20, right: 20, bottom: 20),
                 child: Column(
                   children: [
-                    buildTitleAndAddButton(),
+                    Text(
+                      'Find events',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
+                        decorationColor: Colors.black,
+                      ),
+                    ),
                     buildSearchBar(),
                     const SizedBox(height: 16),
                     _areEventsLoading
@@ -120,22 +127,6 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
                 ),
               ),
             )));
-  }
-
-  Widget buildTitleAndAddButton() {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      const SizedBox(width: 40),
-      const Text(
-        'Find events',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 30,
-          decorationColor: Colors.black,
-        ),
-      ),
-      if (userRole == UserRole.organisation) buildAddEventButton(context),
-    ]);
   }
 
   Widget buildSearchBar() {
@@ -614,44 +605,5 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
     setState(() {
       _filteredEvents = filteredList;
     });
-  }
-
-  Widget buildAddEventButton(BuildContext context) {
-    return Align(
-      alignment: Alignment.center,
-      child: Container(
-        alignment: Alignment.center,
-        height: 50,
-        width: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 5,
-              blurRadius: 7,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(
-          child: IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                    builder: (context) => CreateVolunteeringEventPage()),
-              );
-            },
-            icon: const Icon(Icons.add_rounded, color: Colors.white, size: 35),
-            color: const Color(0xFF4136F1),
-          ),
-        ),
-      ),
-    );
   }
 }

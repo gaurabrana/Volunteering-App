@@ -5,18 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../DataAccessLayer/PhotoDAO.dart';
-import '../Feed.dart';
-import '../Leaderboard.dart';
-import '../NavBarManager.dart';
-import '../Profile.dart';
-import '../RecordVolunteering.dart';
-import '../SearchVolunteering.dart';
+import '../common_helper.dart';
 
 class UploadProfilePhotoPage extends StatefulWidget {
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> logInNavigatorKey;
 
-  const UploadProfilePhotoPage({super.key, required this.mainNavigatorKey, required this.logInNavigatorKey});
+  const UploadProfilePhotoPage(
+      {super.key,
+      required this.mainNavigatorKey,
+      required this.logInNavigatorKey});
 
   @override
   _UploadProfilePhotoPageState createState() {
@@ -38,7 +36,9 @@ class _UploadProfilePhotoPageState extends State<UploadProfilePhotoPage> {
                     const SizedBox(height: 50),
                     Center(
                       child: Container(
-                        constraints: BoxConstraints(maxWidth: (MediaQuery.of(context).size.width) - 100),
+                        constraints: BoxConstraints(
+                            maxWidth:
+                                (MediaQuery.of(context).size.width) - 100),
                         child: const Text(
                           'Upload profile photo',
                           textAlign: TextAlign.center,
@@ -50,7 +50,10 @@ class _UploadProfilePhotoPageState extends State<UploadProfilePhotoPage> {
                       ),
                     ),
                     const SizedBox(height: 120),
-                    UploadPhotoForm(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,),
+                    UploadPhotoForm(
+                      mainNavigatorKey: widget.mainNavigatorKey,
+                      logInNavigatorKey: widget.logInNavigatorKey,
+                    ),
                     const Spacer(),
                     TextButton(
                       onPressed: () async {
@@ -71,19 +74,18 @@ class _UploadProfilePhotoPageState extends State<UploadProfilePhotoPage> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 10.0, horizontal: 20.0),
                               actions: <Widget>[
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.of(context).push(MaterialPageRoute(
-                                        builder: (context) => NavBarManager(
-                                          initialIndex: 0,
-                                          searchVolunteeringPage: SearchVolunteeringPage(),
-                                          feedPage: FeedPage( mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
-                                          //profilePage: ,
-                                          recordVolunteeringPage: RecordVolunteeringPage(),
-                                          leaderboardPage: LeaderboardPage(), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
-                                        )));
+                                    CommonHelper.redirectToAnotherPage(
+                                        indexToNavigate: 0,
+                                        context: context,
+                                        logInNavigatorKey:
+                                            widget.logInNavigatorKey,
+                                        mainNavigatorKey:
+                                            widget.mainNavigatorKey);
                                   },
                                   child: const Text('OK'),
                                 ),
@@ -92,16 +94,11 @@ class _UploadProfilePhotoPageState extends State<UploadProfilePhotoPage> {
                           },
                         );
                         await Future.delayed(Duration(seconds: 5));
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => NavBarManager(
-                              initialIndex: 0,
-                              searchVolunteeringPage: SearchVolunteeringPage(),
-                              feedPage: FeedPage( mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
-                              //profilePage: ,
-                              recordVolunteeringPage: RecordVolunteeringPage(),
-                              leaderboardPage: LeaderboardPage(), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
-                            ),
-                                ));
+                        CommonHelper.redirectToAnotherPage(
+                            indexToNavigate: 0,
+                            context: context,
+                            logInNavigatorKey: widget.logInNavigatorKey,
+                            mainNavigatorKey: widget.mainNavigatorKey);
                       },
                       child: Text('Skip',
                           textAlign: TextAlign.center,
@@ -125,7 +122,10 @@ class UploadPhotoForm extends StatefulWidget {
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> logInNavigatorKey;
 
-  const UploadPhotoForm({super.key, required this.mainNavigatorKey, required this.logInNavigatorKey});
+  const UploadPhotoForm(
+      {super.key,
+      required this.mainNavigatorKey,
+      required this.logInNavigatorKey});
 }
 
 class _UploadProfilePhotoFormState extends State<UploadPhotoForm> {
@@ -189,18 +189,21 @@ class _UploadProfilePhotoFormState extends State<UploadPhotoForm> {
                           ),
                         ),
                         child: Center(
-                            child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                          IconButton(
-                            onPressed: getImage,
-                            icon: const Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                            color: Color(0xFF4136F1),
-                            iconSize: 50,
-                          ),
-                        ])))))
+                            child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                              IconButton(
+                                onPressed: getImage,
+                                icon: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
+                                color: Color(0xFF4136F1),
+                                iconSize: 50,
+                              ),
+                            ])))))
           ],
         ),
         //upload button
@@ -241,7 +244,8 @@ class _UploadProfilePhotoFormState extends State<UploadPhotoForm> {
                     User? user = FirebaseAuth.instance.currentUser;
                     if (user != null) {
                       String uid = user.uid;
-                      String? photoUrl = await PhotoDAO.uploadImageToFirebaseStorage(_image!);
+                      String? photoUrl =
+                          await PhotoDAO.uploadImageToFirebaseStorage(_image!);
                       if (photoUrl != null) {
                         PhotoDAO.storeImageUrlInFirestore(uid, photoUrl);
                         showDialog(
@@ -249,22 +253,18 @@ class _UploadProfilePhotoFormState extends State<UploadPhotoForm> {
                           builder: (BuildContext context) {
                             return AlertDialog(
                               title: const Text('Upload Successful'),
-                              content: const Text('Profile picture uploaded successfully!'),
+                              content: const Text(
+                                  'Profile picture uploaded successfully!'),
                               actions: <Widget>[
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => NavBarManager(
-                                          initialIndex: 0,
-                                          searchVolunteeringPage: SearchVolunteeringPage(),
-                                          feedPage: FeedPage( mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
-                                          //profilePage: ,
-                                          recordVolunteeringPage: RecordVolunteeringPage(),
-                                          leaderboardPage: LeaderboardPage(), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
-                                        ),
-                                      ),
-                                    );
+                                    CommonHelper.redirectToAnotherPage(
+                                        indexToNavigate: 0,
+                                        context: context,
+                                        logInNavigatorKey:
+                                            widget.logInNavigatorKey,
+                                        mainNavigatorKey:
+                                            widget.mainNavigatorKey);
                                   },
                                   child: const Text('OK'),
                                 ),

@@ -1,3 +1,4 @@
+import 'package:HeartOfExperian/Pages/homepage_organisation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -319,7 +320,7 @@ class FeedPageState extends State<FeedPage> {
               builder: (context) => NavBarManager(
                     initialIndex: 1,
                     searchVolunteeringPage: SearchVolunteeringPage(),
-                    feedPage: widget,
+                    feedPage: HomepageOrganisation(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
                     leaderboardPage: LeaderboardPage(),
@@ -369,7 +370,7 @@ class FeedPageState extends State<FeedPage> {
               builder: (context) => NavBarManager(
                     initialIndex: 1,
                     searchVolunteeringPage: SearchVolunteeringPage(),
-                    feedPage: widget,
+                    feedPage: HomepageOrganisation(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
                     leaderboardPage: LeaderboardPage(),
@@ -446,7 +447,7 @@ class FeedPageState extends State<FeedPage> {
                     // todo dont make here.
                     initialIndex: 4,
                     searchVolunteeringPage: SearchVolunteeringPage(),
-                    feedPage: widget,
+                    feedPage: HomepageOrganisation(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
                     leaderboardPage: LeaderboardPage(),

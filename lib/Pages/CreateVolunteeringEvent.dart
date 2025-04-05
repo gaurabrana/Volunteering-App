@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:HeartOfExperian/DataAccessLayer/PhotoDAO.dart';
 import 'package:HeartOfExperian/Pages/CustomWidgets/BackButton.dart';
+import 'package:HeartOfExperian/Pages/common_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,15 +15,12 @@ import 'CustomWidgets/FormInputFields/EventDescriptionInputField.dart';
 import 'CustomWidgets/FormInputFields/EventLocationInputField.dart';
 import 'CustomWidgets/FormInputFields/EventTitleInputField.dart';
 import 'CustomWidgets/FormInputFields/EventWebsiteInputField.dart';
-import 'Feed.dart';
-import 'Leaderboard.dart';
-import 'NavBarManager.dart';
-import 'Profile.dart';
-import 'RecordVolunteering.dart';
 import 'SearchVolunteering.dart';
 
 class CreateVolunteeringEventPage extends StatefulWidget {
-  CreateVolunteeringEventPage({Key? key}) : super(key: key);
+  final Function(int) callbackOnCreateSuccess;
+  const CreateVolunteeringEventPage(
+      {super.key, required this.callbackOnCreateSuccess});
 
   @override
   _CreateVolunteeringEventPageState createState() {
@@ -30,7 +28,8 @@ class CreateVolunteeringEventPage extends StatefulWidget {
   }
 }
 
-class _CreateVolunteeringEventPageState extends State<CreateVolunteeringEventPage> {
+class _CreateVolunteeringEventPageState
+    extends State<CreateVolunteeringEventPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +37,8 @@ class _CreateVolunteeringEventPageState extends State<CreateVolunteeringEventPag
         return SingleChildScrollView(
             child: Center(
                 child: Padding(
-                    padding: const EdgeInsets.only(top: 50, left: 30, right: 30, bottom: 0),
+                    padding: const EdgeInsets.only(
+                        top: 50, left: 30, right: 30, bottom: 0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
@@ -52,7 +52,9 @@ class _CreateVolunteeringEventPageState extends State<CreateVolunteeringEventPag
                                 fontSize: 30,
                               )),
                         ]),
-                        _CreateVolunteeringEventForm(),
+                        _CreateVolunteeringEventForm(
+                            callbackOnCreateSuccess:
+                                widget.callbackOnCreateSuccess),
                       ],
                     ))));
       }),
@@ -61,11 +63,15 @@ class _CreateVolunteeringEventPageState extends State<CreateVolunteeringEventPag
 }
 
 class _CreateVolunteeringEventForm extends StatefulWidget {
+  final Function(int) callbackOnCreateSuccess;
+
+  const _CreateVolunteeringEventForm({required this.callbackOnCreateSuccess});
   @override
   State<StatefulWidget> createState() => _CreateVolunteeringEventFormState();
 }
 
-class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventForm> {
+class _CreateVolunteeringEventFormState
+    extends State<_CreateVolunteeringEventForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -77,13 +83,14 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
   List<File> _images = <File>[];
   bool _savingInProgress = false;
   bool _isHappyToBeContacted = false;
-  bool online = true;
+  bool online = false;
   late LocationInputInputField locationInputField;
 
   @override
   void initState() {
     super.initState();
-    locationInputField = LocationInputInputField(locationController: _locationController);
+    locationInputField =
+        LocationInputInputField(locationController: _locationController);
   }
 
   @override
@@ -184,7 +191,8 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _images.map((image) => _buildImagePreview(image)).toList(),
+                children:
+                    _images.map((image) => _buildImagePreview(image)).toList(),
               ),
             ),
             SizedBox(height: 10),
@@ -218,34 +226,38 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
           ],
         ),
         child: Center(
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-          TextButton(
-              onPressed: () async {
-                uploadEvent();
-              },
-              child: Container(
-                height: 40,
-                width: 400,
-                alignment: Alignment.center,
-                child: _savingInProgress
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      )
-                    : const Text("Upload",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 20,
-                          color: Colors.white,
-                        )), // todo could i have a cool animation here
-              ))
-        ])));
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+              TextButton(
+                  onPressed: () async {
+                    uploadEvent();
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 400,
+                    alignment: Alignment.center,
+                    child: _savingInProgress
+                        ? const CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          )
+                        : const Text("Upload",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 20,
+                              color: Colors.white,
+                            )), // todo could i have a cool animation here
+                  ))
+            ])));
   }
 
   Widget buildDatePicker(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        _selectDate(context);
+        _selectDateTime(context);
       },
       child: Container(
         height: 60,
@@ -259,7 +271,7 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "${DateFormat('dd/MM/yy').format(_date)}",
+              DateFormat('dd/MM/yy hh:mm a').format(_date),
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade700,
@@ -271,17 +283,38 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDateTime(BuildContext context) async {
+    // First, pick the date
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(Duration(days: 1)),
       firstDate: DateTime.now().add(Duration(days: 1)),
       lastDate: DateTime(2030, 1),
     );
-    setState(() {
-      if (picked != null) _date = picked;
-    });
-    //if (picked != null) print({picked.toString()});
+
+    if (pickedDate != null) {
+      // Then, pick the time
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(DateTime.now()),
+      );
+
+      if (pickedTime != null) {
+        // Combine the date and time
+        final DateTime finalDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        // Update your state with the selected date and time
+        setState(() {
+          _date = finalDateTime;
+        });
+      }
+    }
   }
 
   Widget buildVolunteeringTypeOptions(BuildContext context) {
@@ -295,29 +328,42 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
           });
         },
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
             return Colors.white;
           }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
+          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+              (Set<MaterialState> states) {
             return selectedTypeIndex == i
-                ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600); // Set the text color and style based on selection
+                ? const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)
+                : TextStyle(
+                    color: Colors.grey
+                        .shade600); // Set the text color and style based on selection
           }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
+          side: MaterialStateProperty.resolveWith<BorderSide>(
+              (Set<MaterialState> states) {
             return selectedTypeIndex == i
                 ? const BorderSide(color: Colors.purple, width: 2.0)
-                : const BorderSide(color: Colors.grey, width: 1.0); // Set the border color and width based on selection
+                : const BorderSide(
+                    color: Colors.grey,
+                    width:
+                        1.0); // Set the border color and width based on selection
           }),
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0), // Set the border radius
+              borderRadius:
+                  BorderRadius.circular(20.0), // Set the border radius
             ),
           ),
         ),
         child: Text(
           types[i],
           style: selectedTypeIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
+              ? const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins')
               : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
         ),
       ));
@@ -476,6 +522,16 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
         }
       }
 
+      if (!CommonHelper.isFutureDate(_date)) {
+        setState(() {
+          _savingInProgress = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Error: Event date should be in the future.'),
+        ));
+        return;
+      }
+
       VolunteeringEvent volunteeringEvent = VolunteeringEvent(
         date: _date,
         type: types[selectedTypeIndex],
@@ -494,6 +550,8 @@ class _CreateVolunteeringEventFormState extends State<_CreateVolunteeringEventFo
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Volunteering event created successfully'),
       ));
+      Navigator.pop(context);
+      widget.callbackOnCreateSuccess(3);
     } catch (e) {
       print(e);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
