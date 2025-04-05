@@ -5,22 +5,22 @@ import '../../DataAccessLayer/UserDAO.dart';
 import '../CustomWidgets/BackButton.dart';
 import '../CustomWidgets/FormInputFields/ConfirmPasswordInputField.dart';
 import '../CustomWidgets/FormInputFields/EmailInputField.dart';
-import '../CustomWidgets/FormInputFields/ForenameInputField.dart';
+import '../CustomWidgets/FormInputFields/UsernameInputField.dart';
 import '../CustomWidgets/FormInputFields/PasswordInputField.dart';
-import '../CustomWidgets/FormInputFields/SurnameInputField.dart';
-import '../CustomWidgets/FormInputFields/TeamInputField.dart';
+import '../CustomWidgets/FormInputFields/UserRoleInput.dart';
 import '../Settings/SharedPreferences.dart';
-import 'CreateTeam.dart';
 import 'UploadInitialProfilePhoto.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class CreateAccountPage extends StatefulWidget {
-
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> logInNavigatorKey;
 
-  const CreateAccountPage({super.key, required this.mainNavigatorKey, required this.logInNavigatorKey});
+  const CreateAccountPage(
+      {super.key,
+      required this.mainNavigatorKey,
+      required this.logInNavigatorKey});
   @override
   _CreateAccountPageState createState() {
     return _CreateAccountPageState();
@@ -34,7 +34,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       body: Builder(builder: (BuildContext context) {
         return SingleChildScrollView(
             child: Padding(
-                padding: const EdgeInsets.only(top: 100, left: 20, right: 20, bottom: 20),
+                padding: const EdgeInsets.only(
+                    top: 100, left: 20, right: 20, bottom: 20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -50,7 +51,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                           )),
                     ]),
                     const SizedBox(height: 20),
-                    _CreateAccountForm(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,),
+                    _CreateAccountForm(
+                      mainNavigatorKey: widget.mainNavigatorKey,
+                      logInNavigatorKey: widget.logInNavigatorKey,
+                    ),
                   ],
                 )));
       }),
@@ -63,7 +67,10 @@ class _CreateAccountForm extends StatefulWidget {
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> logInNavigatorKey;
 
-  const _CreateAccountForm({super.key, required this.mainNavigatorKey, required this.logInNavigatorKey});
+  const _CreateAccountForm(
+      {super.key,
+      required this.mainNavigatorKey,
+      required this.logInNavigatorKey});
 
   @override
   State<StatefulWidget> createState() => _CreateAccountFormState();
@@ -71,11 +78,11 @@ class _CreateAccountForm extends StatefulWidget {
 
 class _CreateAccountFormState extends State<_CreateAccountForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _forenameController = TextEditingController();
-  final TextEditingController _surnameController = TextEditingController();
+  final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   late final FocusNode _nameFocusNode = FocusNode();
   late final FocusNode _emailFocusNode = FocusNode();
@@ -85,10 +92,17 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
   String _selectedTeamName = "";
   String _userEmail = "";
   String _registrationErrorMessage = "";
+  String _userRole = "";
 
   void updateSelectedTeamName(String name) {
     setState(() {
       _selectedTeamName = name;
+    });
+  }
+
+  void updateSelectedUserRole(String role) {
+    setState(() {
+      _userRole = role;
     });
   }
 
@@ -115,37 +129,20 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
-            TeamInputField(
-              updateSelectedTeamName: updateSelectedTeamName,
+            UserRoleFormField(onChange: updateSelectedUserRole),
+            UserNameInputField(
+              controller: _userNameController,
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => CreateTeamPage()));
-              },
-              child: RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  text: "Don't have a team?  ",
-                  style: TextStyle(color: Colors.grey[700], fontSize: 15, fontFamily: 'Poppins'),
-                  children: <TextSpan>[
-                    TextSpan(
-                      text: 'Create one ',
-                      style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-                    )
-                  ],
-                ),
-              ),
-            ),
-            Row(children: [
-              ForenameInputField(
-                controller: _forenameController,
-              ),
-              SurnameInputField(
-                controller: _surnameController,
-              ),
-            ]),
-            EmailInputField(controller: _emailController, focusNextField: _focusNextField, focusNode: _emailFocusNode, key: UniqueKey()),
-            PasswordInputField(controller: _passwordController, focusNextField: _focusNextField, focusNode: _passwordFocusNode, key: UniqueKey()),
+            EmailInputField(
+                controller: _emailController,
+                focusNextField: _focusNextField,
+                focusNode: _emailFocusNode,
+                key: UniqueKey()),
+            PasswordInputField(
+                controller: _passwordController,
+                focusNextField: _focusNextField,
+                focusNode: _passwordFocusNode,
+                key: UniqueKey()),
             ConfirmPasswordInputField(
                 password1controller: _passwordController,
                 password2controller: _confirmPasswordController,
@@ -154,42 +151,45 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
             Container(
                 padding: const EdgeInsets.symmetric(vertical: 20.0),
                 alignment: Alignment.topRight,
-                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: <Widget>[
-                  const Text('Create',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                      )),
-                  const SizedBox(width: 15.0),
-                  Container(
-                    height: 50,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-                      ),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          _register();
-                        }
-                      },
-                    ),
-                  )
-                ])),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      const Text('Create',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30,
+                          )),
+                      const SizedBox(width: 15.0),
+                      Container(
+                        height: 50,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              _register();
+                            }
+                          },
+                        ),
+                      )
+                    ])),
             Container(
               alignment: Alignment.center,
-              child: Text(_registrationErrorMessage, style: const TextStyle(color: Colors.red)),
+              child: Text(_registrationErrorMessage,
+                  style: const TextStyle(color: Colors.red)),
             ),
           ],
         ));
@@ -197,11 +197,18 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
 
   void _register() async {
     try {
-      final user =
-          (await _auth.createUserWithEmailAndPassword(email: (_emailController.text + "@experian.com"), password: _passwordController.text)).user;
+      final user = (await _auth.createUserWithEmailAndPassword(
+              email: ("${_emailController.text}@experian.com"),
+              password: _passwordController.text))
+          .user;
       if (user != null) {
         await UserDAO.storeUserDetails(
-            user.uid, _forenameController.text, _surnameController.text, _selectedTeamName, (_emailController.text + "@experian.com"));
+          user.uid,
+          _userNameController.text,
+          _selectedTeamName,
+          ("${_emailController.text}@experian.com"),
+          _userRole,
+        );
 
         setState(() {
           _userEmail = user.email as String;
@@ -224,7 +231,11 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
   }
 
   getUserToUploadProfilePhoto(BuildContext context) async {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => UploadProfilePhotoPage(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,)));
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => UploadProfilePhotoPage(
+              mainNavigatorKey: widget.mainNavigatorKey,
+              logInNavigatorKey: widget.logInNavigatorKey,
+            )));
   }
 
   String _handleRegistrationError(String errorCode) {
@@ -246,8 +257,7 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _forenameController.dispose();
-    _surnameController.dispose();
+    _userNameController.dispose();
     _confirmPasswordController.dispose();
     _nameFocusNode.dispose();
     _emailFocusNode.dispose();
@@ -256,5 +266,3 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
     super.dispose();
   }
 }
-
-

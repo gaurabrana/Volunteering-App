@@ -1,4 +1,3 @@
-import 'package:HeartOfExperian/Pages/Team.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +6,6 @@ import 'package:intl/intl.dart';
 
 import '../DataAccessLayer/FollowingDAO.dart';
 import '../DataAccessLayer/PhotoDAO.dart';
-import '../DataAccessLayer/TeamDAO.dart';
 import '../DataAccessLayer/UserDAO.dart';
 import '../DataAccessLayer/VolunteeringEventDAO.dart';
 import '../DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
@@ -44,7 +42,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
   int selectedYearIndex = 0;
   bool isVolunteeringHistoryLoading = true;
   late List<VolunteeringHistory> _volunteeringHistory;
-  final TextEditingController financialYearTextEditingController = TextEditingController();
+  final TextEditingController financialYearTextEditingController =
+      TextEditingController();
   int _financialYearShownOnGraph = 24;
   bool _5_hour_badge_earned = false;
   bool _10_hour_badge_earned = false;
@@ -57,7 +56,6 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
   late List<VolunteeringEvent> upcomingVolunteeringEvents = [];
   late List<VolunteeringEvent> completedVolunteeringEvents = [];
   bool areVolunteeringEventsLoading = true;
-  late String _teamName;
 
   @override
   void initState() {
@@ -76,7 +74,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
   Future<void> _fetchProfilePhoto() async {
     try {
-      String photoURL = await PhotoDAO.getUserProfilePhotoUrlFromFirestore(widget.UID);
+      String photoURL =
+          await PhotoDAO.getUserProfilePhotoUrlFromFirestore(widget.UID);
       setState(() {
         _photoURL = photoURL;
         isPhotoLoading = false;
@@ -88,7 +87,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
   Future<void> _fetchCurrentUserIsFollowing() async {
     try {
-      bool isCurrentUserFollowing = await FollowingDAO.isUserFollowedByUser(FirebaseAuth.instance.currentUser!.uid, widget.UID);
+      bool isCurrentUserFollowing = await FollowingDAO.isUserFollowedByUser(
+          FirebaseAuth.instance.currentUser!.uid, widget.UID);
       setState(() {
         currentUserIsFollowing = isCurrentUserFollowing;
         currentUserIsFollowingIsLoading = false;
@@ -101,10 +101,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
   Future<void> _fetchUserDetails() async {
     try {
       UserDetails? userDetails = await UserDAO.getUserDetails(widget.UID);
-      String? teamName = await TeamDAO.getTeamName(userDetails!.team!);
       setState(() {
         _userDetails = userDetails!;
-        _teamName = teamName!;
         areUserDetailsLoading = false;
       });
     } catch (e) {
@@ -114,9 +112,14 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
   Future<void> _fetchHistoricalHours() async {
     try {
-      int monthHours = await VolunteeringHistoryDAO.getUsersVolunteeringHoursOfPastMonth(_userDetails.UID, "Any");
-      int yearHours = await VolunteeringHistoryDAO.getUsersVolunteeringHoursThisFinancialYear(_userDetails.UID, "Any");
-      int allTimeHours = await VolunteeringHistoryDAO.getUsersAllTimeVolunteeringHours(_userDetails.UID);
+      int monthHours =
+          await VolunteeringHistoryDAO.getUsersVolunteeringHoursOfPastMonth(
+              _userDetails.UID, "Any");
+      int yearHours = await VolunteeringHistoryDAO
+          .getUsersVolunteeringHoursThisFinancialYear(_userDetails.UID, "Any");
+      int allTimeHours =
+          await VolunteeringHistoryDAO.getUsersAllTimeVolunteeringHours(
+              _userDetails.UID);
       setState(() {
         _hoursThisMonth = monthHours;
         _hoursThisYear = yearHours;
@@ -131,7 +134,9 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
   Future<void> _fetchAllVolunteeringHistory() async {
     try {
-      List<VolunteeringHistory>? volunteeringHistory = await VolunteeringHistoryDAO.getAllUsersVolunteeringHistory(_userDetails.UID);
+      List<VolunteeringHistory>? volunteeringHistory =
+          await VolunteeringHistoryDAO.getAllUsersVolunteeringHistory(
+              _userDetails.UID);
       setState(() {
         if (volunteeringHistory != null) {
           _volunteeringHistory = volunteeringHistory;
@@ -154,26 +159,25 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
       List<VolunteeringEvent> upcomingVolunteering = [];
       List<VolunteeringEvent> completedVolunteering = [];
 
-      List<String> allEventIds = await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(_userDetails.UID);
+      List<String> allEventIds =
+          await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(
+              _userDetails.UID);
 
       for (var eventId in allEventIds) {
-        VolunteeringEvent? event = await VolunteeringEventDAO.getVolunteeringEvent(eventId);
+        VolunteeringEvent? event =
+            await VolunteeringEventDAO.getVolunteeringEvent(eventId);
 
         if (event!.date.isAfter(DateTime.now())) {
-          upcomingVolunteering.add(event!);
+          upcomingVolunteering.add(event);
         } else {
-          completedVolunteering.add(event!);
+          completedVolunteering.add(event);
         }
       }
 
       setState(() {
-        if (upcomingVolunteeringEvents != null) {
-          upcomingVolunteeringEvents.addAll(upcomingVolunteering!);
-        }
-        if (completedVolunteeringEvents != null) {
-          completedVolunteeringEvents.addAll(completedVolunteering!);
-        }
-        areVolunteeringEventsLoading = false;
+        upcomingVolunteeringEvents.addAll(upcomingVolunteering);
+              completedVolunteeringEvents.addAll(completedVolunteering);
+              areVolunteeringEventsLoading = false;
       });
     } catch (e) {
       //print('Error fetching events: $e');
@@ -186,7 +190,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
         backgroundColor: Colors.white,
         body: SingleChildScrollView(
             child: Padding(
-          padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+          padding:
+              const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
           child: Column(
             children: [
               Row(
@@ -200,7 +205,6 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
               const SizedBox(height: 20),
               buildProfileName(context),
               buildProfileEmail(context),
-              buildTeamButton(context),
               const SizedBox(height: 10),
               buildHistoricalHoursSection(context),
               const SizedBox(height: 25),
@@ -288,14 +292,16 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                         height: 150,
                         fit: BoxFit.cover,
                         _photoURL,
-                        loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                        loadingBuilder: (BuildContext context, Widget child,
+                            ImageChunkEvent? loadingProgress) {
                           if (loadingProgress == null) {
                             return child;
                           } else {
                             return const CircularProgressIndicator();
                           }
                         },
-                        errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+                        errorBuilder: (BuildContext context, Object exception,
+                            StackTrace? stackTrace) {
                           return const Text('Failed to load image');
                         },
                       ),
@@ -315,23 +321,32 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                                   gradient: const LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
-                                    colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
+                                    colors: [
+                                      Color(0xFF8643FF),
+                                      Color(0xFF4136F1)
+                                    ],
                                   ),
                                 ),
                                 child: Center(
-                                    child:
-                                        Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                  IconButton(
-                                    onPressed: () {
-                                      followOrUnfollow();
-                                    },
-                                    icon: currentUserIsFollowing
-                                        ? FaIcon(FontAwesomeIcons.userMinus, color: Colors.white, size: 17)
-                                        : FaIcon(FontAwesomeIcons.userPlus, color: Colors.white, size: 17),
-                                    color: Color(0xFF4136F1),
-                                    iconSize: 50,
-                                  ),
-                                ])))))
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                      IconButton(
+                                        onPressed: () {
+                                          followOrUnfollow();
+                                        },
+                                        icon: currentUserIsFollowing
+                                            ? FaIcon(FontAwesomeIcons.userMinus,
+                                                color: Colors.white, size: 17)
+                                            : FaIcon(FontAwesomeIcons.userPlus,
+                                                color: Colors.white, size: 17),
+                                        color: Color(0xFF4136F1),
+                                        iconSize: 50,
+                                      ),
+                                    ])))))
               ]));
   }
 
@@ -341,15 +356,18 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
       currentUserIsFollowingIsLoading = true;
     });
     if (currentUserIsFollowing) {
-      Following following = Following(followerUID: FirebaseAuth.instance.currentUser!.uid, followingUID: widget.UID);
+      Following following = Following(
+          followerUID: FirebaseAuth.instance.currentUser!.uid,
+          followingUID: widget.UID);
       FollowingDAO.addFollowing(following);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('You are now following ' + _userDetails.forename + " " + _userDetails.surname),
+        content: Text('You are now following ${_userDetails.name}'),
       ));
     } else {
-      FollowingDAO.removeFollowing(FirebaseAuth.instance.currentUser!.uid, widget.UID);
+      FollowingDAO.removeFollowing(
+          FirebaseAuth.instance.currentUser!.uid, widget.UID);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Unfollowed ' + _userDetails.forename + " " + _userDetails.surname + ' successfully'),
+        content: Text('Unfollowed ${_userDetails.name} successfully'),
       ));
     }
     setState(() {
@@ -362,7 +380,7 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
       child: areUserDetailsLoading
           ? const CircularProgressIndicator()
           : Text(
-              _userDetails.forename + " " + _userDetails.surname,
+              _userDetails.name,
               textAlign: TextAlign.left,
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
@@ -395,33 +413,12 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                     padding: EdgeInsets.zero,
                     icon: Icon(Icons.content_copy, size: 15),
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: _userDetails.email.toLowerCase()));
+                      Clipboard.setData(ClipboardData(
+                          text: _userDetails.email.toLowerCase()));
                     },
                   ),
                 ]),
     );
-  }
-
-  Widget buildTeamButton(BuildContext context) {
-    return TextButton(
-        onPressed: () async {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => TeamPage(
-                teamId: _userDetails.team,
-              ),
-            ),
-          );
-        },
-        child: areUserDetailsLoading
-            ? const CircularProgressIndicator()
-            : Text(_teamName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  decorationColor: Colors.black,
-                )));
   }
 
   Widget _buildStat(int hours, String label) {
@@ -535,10 +532,12 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
-        : (completedVolunteeringEvents.isNotEmpty || upcomingVolunteeringEvents.isNotEmpty)
+        : (completedVolunteeringEvents.isNotEmpty ||
+                upcomingVolunteeringEvents.isNotEmpty)
             ? Container(
                 alignment: Alignment.center,
-                padding: const EdgeInsets.only(top: 5, left: 25, right: 20, bottom: 10),
+                padding: const EdgeInsets.only(
+                    top: 5, left: 25, right: 20, bottom: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30.0),
@@ -585,7 +584,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
             onPressed: () {
               _showFilterPopup();
             },
-            icon: const FaIcon(FontAwesomeIcons.sliders, color: Colors.white, size: 25), //todo adjust thickness
+            icon: const FaIcon(FontAwesomeIcons.sliders,
+                color: Colors.white, size: 25), //todo adjust thickness
             color: Color(0xFF4136F1),
           ),
         ),
@@ -603,31 +603,43 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
           setState(() {
             selectedYearIndex = i;
             _financialYearShownOnGraph = recentFYs[selectedYearIndex];
-            financialYearTextEditingController.text = _financialYearShownOnGraph.toString();
+            financialYearTextEditingController.text =
+                _financialYearShownOnGraph.toString();
           });
         },
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
             return Colors.white;
           }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
-            return selectedYearIndex == i // todo the old button style is not changing back
+          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+              (Set<MaterialState> states) {
+            return selectedYearIndex ==
+                    i // todo the old button style is not changing back
                 ? TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.normal);
+                : TextStyle(
+                    color: Colors.grey.shade600, fontWeight: FontWeight.normal);
           }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
-            return selectedYearIndex == i ? BorderSide(color: Colors.purple, width: 2.0) : BorderSide(color: Colors.grey, width: 1.0);
+          side: MaterialStateProperty.resolveWith<BorderSide>(
+              (Set<MaterialState> states) {
+            return selectedYearIndex == i
+                ? BorderSide(color: Colors.purple, width: 2.0)
+                : BorderSide(color: Colors.grey, width: 1.0);
           }),
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0), // Set the border radius
+              borderRadius:
+                  BorderRadius.circular(20.0), // Set the border radius
             ),
           ),
         ),
         child: Text(
           "FY${recentFYs[i]}",
           style: selectedYearIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
+              ? const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins')
               : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
         ),
       ));
@@ -647,22 +659,25 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
               decorationColor: Colors.black,
             ),
           ),
-          content: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            const Text(
-              'Financial Year',
-              textAlign: TextAlign.left,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 17,
-                decorationColor: Colors.black,
-              ),
-            ),
-            Wrap(
-              spacing: 10.0, // spacing between buttons
-              runSpacing: 1.0, // spacing between rows
-              children: widgets,
-            )
-          ]),
+          content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Financial Year',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    decorationColor: Colors.black,
+                  ),
+                ),
+                Wrap(
+                  spacing: 10.0, // spacing between buttons
+                  runSpacing: 1.0, // spacing between rows
+                  children: widgets,
+                )
+              ]),
           actions: <Widget>[
             // todo company averages.!!!
             Container(
@@ -686,28 +701,33 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                   ],
                 ),
                 child: Center(
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                  TextButton(
-                      onPressed: () async {
-                        int newFinancialYear = int.tryParse(financialYearTextEditingController.text) ?? 24;
-                        setState(() {
-                          _financialYearShownOnGraph = newFinancialYear;
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      child: Container(
-                        height: 40,
-                        width: 310,
-                        alignment: Alignment.center,
-                        child: const Text("Save",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            )), // todo could i have a cool animation here
-                      )),
-                ])))
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                      TextButton(
+                          onPressed: () async {
+                            int newFinancialYear = int.tryParse(
+                                    financialYearTextEditingController.text) ??
+                                24;
+                            setState(() {
+                              _financialYearShownOnGraph = newFinancialYear;
+                            });
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            height: 40,
+                            width: 310,
+                            alignment: Alignment.center,
+                            child: const Text("Save",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                )), // todo could i have a cool animation here
+                          )),
+                    ])))
           ],
         );
       },
@@ -738,7 +758,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
         ? const CircularProgressIndicator()
         : Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.only(top: 20, left: 0, right: 0, bottom: 20),
+            padding:
+                const EdgeInsets.only(top: 20, left: 0, right: 0, bottom: 20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(30.0),
@@ -762,7 +783,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                     if (_5_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 5, 'assets/images/badges/5_hours.png');
+                          showCongratulationDialog(
+                              context, 5, 'assets/images/badges/5_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/5_hours.png',
@@ -779,7 +801,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                     if (_10_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 10, 'assets/images/badges/10_hours.png');
+                          showCongratulationDialog(
+                              context, 10, 'assets/images/badges/10_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/10_hours.png',
@@ -796,7 +819,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                     if (_15_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 15, 'assets/images/badges/15_hours.png');
+                          showCongratulationDialog(
+                              context, 15, 'assets/images/badges/15_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/15_hours.png',
@@ -820,7 +844,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                     if (_30_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 30, 'assets/images/badges/30_hours.png');
+                          showCongratulationDialog(
+                              context, 30, 'assets/images/badges/30_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/30_hours.png',
@@ -837,7 +862,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                     if (_50_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 50, 'assets/images/badges/50_hours.png');
+                          showCongratulationDialog(
+                              context, 50, 'assets/images/badges/50_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/50_hours.png',
@@ -854,7 +880,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                     if (_100_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 100, 'assets/images/badges/100_hours.png');
+                          showCongratulationDialog(context, 100,
+                              'assets/images/badges/100_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/100_hours.png',
@@ -926,7 +953,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
               InkWell(
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => VolunteeringEventDetailsPage(volunteeringEvent: event),
+                    builder: (context) =>
+                        VolunteeringEventDetailsPage(volunteeringEvent: event),
                   ));
                 },
                 child: Row(
@@ -952,7 +980,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.location_on_rounded, color: Colors.grey.shade500, size: 15),
+                              Icon(Icons.location_on_rounded,
+                                  color: Colors.grey.shade500, size: 15),
                               SizedBox(width: 5),
                               Container(
                                 constraints: BoxConstraints(maxWidth: 160),
@@ -995,7 +1024,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
         : Container(
-            padding: const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
+            padding:
+                const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30.0),
               color: Colors.white,
@@ -1008,24 +1038,28 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                 ),
               ],
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Padding(
-                  padding: const EdgeInsets.only(top: 5, left: 5, right: 10, bottom: 5),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text(
-                      " Upcoming",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(upcomingVolunteeringEvents.length.toString(),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey.shade600,
-                        )),
-                  ])),
+                  padding: const EdgeInsets.only(
+                      top: 5, left: 5, right: 10, bottom: 5),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          " Upcoming",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(upcomingVolunteeringEvents.length.toString(),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade600,
+                            )),
+                      ])),
               Column(children: getWidgets())
             ]),
           );
@@ -1110,7 +1144,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.location_on_rounded, color: Colors.grey.shade500, size: 15),
+                              Icon(Icons.location_on_rounded,
+                                  color: Colors.grey.shade500, size: 15),
                               SizedBox(width: 5),
                               Container(
                                 constraints: BoxConstraints(maxWidth: 160),
@@ -1154,7 +1189,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
         : Container(
-            padding: const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
+            padding:
+                const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30.0),
               color: Colors.white,
@@ -1167,41 +1203,48 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                 ),
               ],
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Padding(
-                  padding: const EdgeInsets.only(top: 5, left: 5, right: 10, bottom: 5),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text(
-                      " Completed",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(completedVolunteeringEvents.length.toString(),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey.shade600,
-                        )),
-                  ])),
+                  padding: const EdgeInsets.only(
+                      top: 5, left: 5, right: 10, bottom: 5),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          " Completed",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(completedVolunteeringEvents.length.toString(),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade600,
+                            )),
+                      ])),
               Column(children: getWidgets())
             ]),
           );
   }
 
-  void showCongratulationDialog(BuildContext context, int hours, String badgePhotoURL) {
+  void showCongratulationDialog(
+      BuildContext context, int hours, String badgePhotoURL) {
     String title = "";
     String message = "";
 
     switch (hours) {
       case 5:
         title = "Blossoming Volunteer";
-        message = "Congratulations on completing 5 hours of volunteering! Keep spreading your positivity and watch your garden of impact grow!";
+        message =
+            "Congratulations on completing 5 hours of volunteering! Keep spreading your positivity and watch your garden of impact grow!";
         break;
       case 10:
         title = "Galactic Volunteer";
-        message = "You've reached 10 hours of volunteering! Your impact is out of this world. Keep shining bright!";
+        message =
+            "You've reached 10 hours of volunteering! Your impact is out of this world. Keep shining bright!";
         break;
       case 15:
         title = "Soaring Volunteer";

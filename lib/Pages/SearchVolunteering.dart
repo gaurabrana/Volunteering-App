@@ -1,11 +1,14 @@
 import 'package:HeartOfExperian/Models/VolunteeringEvent.dart';
+import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../DataAccessLayer/UserDAO.dart';
 import '../DataAccessLayer/VolunteeringEventDAO.dart';
 import '../DataAccessLayer/VolunteeringEventFavouritesDAO.dart';
 import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
+import '../Models/UserDetails.dart';
 import 'CreateVolunteeringEvent.dart';
 import 'CustomWidgets/VolunteeringEventCard.dart';
 
@@ -20,7 +23,8 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
   bool _areEventsLoading = true;
   late Widget eventsList;
   TextEditingController _searchController = TextEditingController();
-  List<String> volunteeringTypes = VolunteeringHistoryDAO.volunteeringTypesWithAny;
+  List<String> volunteeringTypes =
+      VolunteeringHistoryDAO.volunteeringTypesWithAny;
   List<String> deliveryTypes = ['Any', 'Online', 'In person'];
   int volunteeringTypesIndex = 0;
   int deliveryTypeIndex = 0;
@@ -31,6 +35,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
   DateTime _selectedStartDate = DateTime.now();
   DateTime _selectedEndDate = DateTime.now().add(Duration(days: 2191));
   String _selectedDeliveryFormat = 'Any';
+  UserRole? userRole;
 
   @override
   void initState() {
@@ -49,7 +54,8 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
   Future<void> fetchData() async {
     initialiseData();
     try {
-      List<VolunteeringEvent>? volunteeringEvents = await VolunteeringEventDAO.getAllFutureVolunteeringEvents();
+      List<VolunteeringEvent>? volunteeringEvents =
+          await VolunteeringEventDAO.getAllFutureVolunteeringEvents();
       setState(() {
         if (volunteeringEvents != null) {
           _volunteeringEvents = volunteeringEvents;
@@ -62,6 +68,19 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
         eventsList = eventList;
         _areEventsLoading = false;
       });
+
+      FirebaseAuth auth = FirebaseAuth.instance;
+      User? user = auth.currentUser;
+      if (user == null) {
+        return;
+      }
+
+      UserDetails? currentUser = await UserDAO.getUserDetails(user.uid);
+      if (currentUser != null) {
+        setState(() {
+          userRole = currentUser.role;
+        });
+      }
     } catch (error) {
       //print('Error fetching data: $error');
     }
@@ -69,35 +88,38 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: RefreshIndicator(
-        onRefresh: fetchData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
-            child: Column(
-              children: [
-                buildTitleAndAddButton(),
-                buildSearchBar(),
-                const SizedBox(height: 16),
-                _areEventsLoading
-                    ? const CircularProgressIndicator()
-                    : FutureBuilder<Widget>(
-                        future: buildEventsList(context),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else {
-                            return snapshot.data ?? Container();
-                          }
-                        },
-                      ),
-              ],
-            ),
-          ),
-        )));
+    return Scaffold(
+        body: RefreshIndicator(
+            onRefresh: fetchData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.only(
+                    top: 40, left: 20, right: 20, bottom: 20),
+                child: Column(
+                  children: [
+                    buildTitleAndAddButton(),
+                    buildSearchBar(),
+                    const SizedBox(height: 16),
+                    _areEventsLoading
+                        ? const CircularProgressIndicator()
+                        : FutureBuilder<Widget>(
+                            future: buildEventsList(context),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text('Error: ${snapshot.error}');
+                              } else {
+                                return snapshot.data ?? Container();
+                              }
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            )));
   }
 
   Widget buildTitleAndAddButton() {
@@ -112,7 +134,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
           decorationColor: Colors.black,
         ),
       ),
-      buildAddEventButton(context),
+      if (userRole == UserRole.organisation) buildAddEventButton(context),
     ]);
   }
 
@@ -154,7 +176,8 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+                  borderSide:
+                      BorderSide(color: Colors.grey.shade500, width: 2.0),
                   borderRadius: BorderRadius.circular(25.0),
                 ),
                 errorBorder: OutlineInputBorder(
@@ -192,29 +215,42 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
           });
         },
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
             return Colors.white;
           }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
+          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+              (Set<MaterialState> states) {
             return volunteeringTypesIndex == i
-                ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600); // Set the text color and style based on selection
+                ? const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)
+                : TextStyle(
+                    color: Colors.grey
+                        .shade600); // Set the text color and style based on selection
           }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
+          side: MaterialStateProperty.resolveWith<BorderSide>(
+              (Set<MaterialState> states) {
             return volunteeringTypesIndex == i
                 ? const BorderSide(color: Colors.purple, width: 2.0)
-                : const BorderSide(color: Colors.grey, width: 1.0); // Set the border color and width based on selection
+                : const BorderSide(
+                    color: Colors.grey,
+                    width:
+                        1.0); // Set the border color and width based on selection
           }),
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0), // Set the border radius
+              borderRadius:
+                  BorderRadius.circular(20.0), // Set the border radius
             ),
           ),
         ),
         child: Text(
           volunteeringTypes[i],
           style: volunteeringTypesIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
+              ? const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins')
               : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
         ),
       ));
@@ -230,29 +266,42 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
           });
         },
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
             return Colors.white;
           }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
+          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+              (Set<MaterialState> states) {
             return deliveryTypeIndex == i
-                ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600); // Set the text color and style based on selection
+                ? const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)
+                : TextStyle(
+                    color: Colors.grey
+                        .shade600); // Set the text color and style based on selection
           }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
+          side: MaterialStateProperty.resolveWith<BorderSide>(
+              (Set<MaterialState> states) {
             return deliveryTypeIndex == i
                 ? const BorderSide(color: Colors.purple, width: 2.0)
-                : const BorderSide(color: Colors.grey, width: 1.0); // Set the border color and width based on selection
+                : const BorderSide(
+                    color: Colors.grey,
+                    width:
+                        1.0); // Set the border color and width based on selection
           }),
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0), // Set the border radius
+              borderRadius:
+                  BorderRadius.circular(20.0), // Set the border radius
             ),
           ),
         ),
         child: Text(
           deliveryTypes[i],
           style: deliveryTypeIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
+              ? const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins')
               : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
         ),
       ));
@@ -337,7 +386,8 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
                         borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+                        borderSide:
+                            BorderSide(color: Colors.grey.shade500, width: 2.0),
                         borderRadius: BorderRadius.circular(25.0),
                       ),
                     ),
@@ -388,25 +438,28 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
                     ],
                   ),
                   child: Center(
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                    TextButton(
-                        onPressed: () async {
-                          filterEvents(_searchController.text);
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          height: 40,
-                          width: 310,
-                          alignment: Alignment.center,
-                          child: const Text("Apply",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 20,
-                                color: Colors.white,
-                              )),
-                        )),
-                  ])))
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                        TextButton(
+                            onPressed: () async {
+                              filterEvents(_searchController.text);
+                              Navigator.of(context).pop();
+                            },
+                            child: Container(
+                              height: 40,
+                              width: 310,
+                              alignment: Alignment.center,
+                              child: const Text("Apply",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                  )),
+                            )),
+                      ])))
             ]);
       },
     );
@@ -499,7 +552,9 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
   Future<Widget> buildEventsList(BuildContext context) async {
     Future<bool> fetchIsFavourite(VolunteeringEvent event) async {
       try {
-        bool favourite = await VolunteeringEventFavouritesDAO.isEventFavouritedByUser(FirebaseAuth.instance.currentUser!.uid, event.reference.id);
+        bool favourite =
+            await VolunteeringEventFavouritesDAO.isEventFavouritedByUser(
+                FirebaseAuth.instance.currentUser!.uid, event.reference.id);
         return favourite;
       } catch (e) {
         //print('Error fetching favourite: $e');
@@ -530,7 +585,8 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
 
   void filterEvents(String query) {
     List<VolunteeringEvent> filteredList = _volunteeringEvents.where((event) {
-      bool matchesQuery = event.name.toLowerCase().contains(query.toLowerCase());
+      bool matchesQuery =
+          event.name.toLowerCase().contains(query.toLowerCase());
 
       bool matchesDeliveryType = _selectedDeliveryFormat == 'Any' ||
           (event.online && _selectedDeliveryFormat == 'Online') ||
@@ -538,13 +594,21 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
 
       bool matchesType = _selectedType == 'Any' || event.type == _selectedType;
 
-      bool matchesLocation = _selectedLocation.isEmpty || event.location.toLowerCase().contains(_selectedLocation.toLowerCase());
+      bool matchesLocation = _selectedLocation.isEmpty ||
+          event.location
+              .toLowerCase()
+              .contains(_selectedLocation.toLowerCase());
 
       bool matchesDateRange = _selectedStartDate == null ||
           _selectedEndDate == null ||
-          (event.date.isAfter(_selectedStartDate!) && event.date.isBefore(_selectedEndDate!));
+          (event.date.isAfter(_selectedStartDate!) &&
+              event.date.isBefore(_selectedEndDate!));
 
-      return matchesQuery && matchesType && matchesLocation && matchesDateRange && matchesDeliveryType;
+      return matchesQuery &&
+          matchesType &&
+          matchesLocation &&
+          matchesDateRange &&
+          matchesDeliveryType;
     }).toList();
 
     setState(() {
@@ -579,7 +643,8 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
           child: IconButton(
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => CreateVolunteeringEventPage()),
+                MaterialPageRoute(
+                    builder: (context) => CreateVolunteeringEventPage()),
               );
             },
             icon: const Icon(Icons.add_rounded, color: Colors.white, size: 35),

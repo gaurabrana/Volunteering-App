@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:HeartOfExperian/Models/UserDetails.dart';
 import 'package:HeartOfExperian/Pages/Authentication/CreateAccount.dart';
 import 'package:HeartOfExperian/Pages/Settings/ForgotPassword.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,7 +25,10 @@ class SignInPage extends StatefulWidget {
   final GlobalKey<NavigatorState> logInNavigatorKey;
   final GlobalKey<NavigatorState> mainNavigatorKey;
 
-  const SignInPage({super.key, required this.logInNavigatorKey, required this.mainNavigatorKey});
+  const SignInPage(
+      {super.key,
+      required this.logInNavigatorKey,
+      required this.mainNavigatorKey});
 
   @override
   _SignInPageState createState() {
@@ -36,52 +40,67 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SingleChildScrollView(
-            primary: false,
-            physics: AlwaysScrollableScrollPhysics(),
-            child: Column(children: [
-              Transform.rotate(
-                  angle: pi,
-                  child: Transform.translate(
-                      offset: const Offset(0, 10),
-                      child: Container(
-                        height: 250,
-                        width: double.infinity,
-                        child: RiveAnimation.asset(
-                          'assets/animations/simple_wave.riv',
-                        ),
-                      ))),
-              Center(
-                  child: Padding(
-                      padding: const EdgeInsets.only(top: 0, left: 20, right: 20, bottom: 0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: <Widget>[
-                          _LogInForm(logInNavigatorKey: widget.logInNavigatorKey, mainNavigatorKey: widget.mainNavigatorKey),
-                          Container(
-                              alignment: Alignment.center,
-                              child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                                SizedBox(height: 40),
-                                const Text("No account?"),
-                                Container(
-                                  width: 500.0,
-                                  child: TextButton(
-                                    onPressed: () async {
-                                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => CreateAccountPage(mainNavigatorKey:  widget.mainNavigatorKey,logInNavigatorKey: widget.logInNavigatorKey, )));
-                                    },
-                                    child: const Text('Create account',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                          decorationColor: Colors.black,
-                                        )),
+      body: SingleChildScrollView(
+          primary: false,
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Column(children: [
+            Transform.rotate(
+                angle: pi,
+                child: Transform.translate(
+                    offset: const Offset(0, 10),
+                    child: Container(
+                      height: 250,
+                      width: double.infinity,
+                      child: RiveAnimation.asset(
+                        'assets/animations/simple_wave.riv',
+                      ),
+                    ))),
+            Center(
+                child: Padding(
+                    padding: const EdgeInsets.only(
+                        top: 0, left: 20, right: 20, bottom: 0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        _LogInForm(
+                            logInNavigatorKey: widget.logInNavigatorKey,
+                            mainNavigatorKey: widget.mainNavigatorKey),
+                        Container(
+                            alignment: Alignment.center,
+                            child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  SizedBox(height: 40),
+                                  const Text("No account?"),
+                                  Container(
+                                    width: 500.0,
+                                    child: TextButton(
+                                      onPressed: () async {
+                                        Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    CreateAccountPage(
+                                                      mainNavigatorKey: widget
+                                                          .mainNavigatorKey,
+                                                      logInNavigatorKey: widget
+                                                          .logInNavigatorKey,
+                                                    )));
+                                      },
+                                      child: const Text('Create account',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20,
+                                            decorationColor: Colors.black,
+                                          )),
+                                    ),
                                   ),
-                                ),
-                              ])),
-                        ],
-                      )))
-            ])), bottomNavigationBar: null,);
+                                ])),
+                      ],
+                    )))
+          ])),
+      bottomNavigationBar: null,
+    );
   }
 }
 
@@ -109,28 +128,51 @@ class _SignInPageState extends State<SignInPage> {
 //   }
 // }
 
-logOutUser(BuildContext context, GlobalKey<NavigatorState> loginNavigationKey, GlobalKey<NavigatorState> mainNavigatorKey,) async {
+Future<void> logOutUser(
+  BuildContext context,
+  GlobalKey<NavigatorState> loginNavigationKey,
+  GlobalKey<NavigatorState> mainNavigatorKey,
+) async {
   SignInSharedPreferences.setSignedIn(false);
+
   if (_auth.currentUser != null) {
-    await _auth.signOut();
     final String email = _auth.currentUser!.email ?? '';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('$email has successfully signed out.'),
-    ));
-    loginNavigationKey.currentState?.pushReplacement(MaterialPageRoute(builder: (context) => SignInPage(logInNavigatorKey: loginNavigationKey, mainNavigatorKey: mainNavigatorKey,)));
+
+    // Sign out from Firebase
+    await _auth.signOut();
+
+    // Clear locally stored user details
+    await SignInSharedPreferences.clearCurrentUserDetails();
+
+    // Show confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$email has successfully signed out.')),
+    );
+
+    // Navigate to sign-in page
+    loginNavigationKey.currentState?.pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => SignInPage(
+          logInNavigatorKey: loginNavigationKey,
+          mainNavigatorKey: mainNavigatorKey,
+        ),
+      ),
+    );
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('No one has signed in.'),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No one has signed in.')),
+    );
   }
 }
-
 
 class _LogInForm extends StatefulWidget {
   final GlobalKey<NavigatorState> logInNavigatorKey;
   final GlobalKey<NavigatorState> mainNavigatorKey;
 
-  const _LogInForm({super.key, required this.logInNavigatorKey, required this.mainNavigatorKey});
+  const _LogInForm(
+      {super.key,
+      required this.logInNavigatorKey,
+      required this.mainNavigatorKey});
 
   @override
   State<StatefulWidget> createState() => _LogInFormState();
@@ -193,8 +235,16 @@ class _LogInFormState extends State<_LogInForm> {
                 fontWeight: FontWeight.normal,
                 fontSize: 20,
               )),
-          EmailInputField(controller: _emailController, focusNextField: _focusNextField, focusNode: _emailFocusNode, key: _emailKey),
-          PasswordInputField(controller: _passwordController, focusNextField: _focusNextField, focusNode: _passwordFocusNode, key: _passwordKey),
+          EmailInputField(
+              controller: _emailController,
+              focusNextField: _focusNextField,
+              focusNode: _emailFocusNode,
+              key: _emailKey),
+          PasswordInputField(
+              controller: _passwordController,
+              focusNextField: _focusNextField,
+              focusNode: _passwordFocusNode,
+              key: _passwordKey),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
@@ -220,39 +270,41 @@ class _LogInFormState extends State<_LogInForm> {
               child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 20.0),
                   alignment: Alignment.topRight,
-                  child: Row(mainAxisAlignment: MainAxisAlignment.end, children: <Widget>[
-                    const Text('Sign in',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 30,
-                        )),
-                    SizedBox(width: 15.0),
-                    Container(
-                      height: 50,
-                      width: 100,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        gradient: material.LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-                        ),
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.arrow_forward,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                        onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            _signInWithEmailAndPassword();
-                          }
-                        },
-                      ),
-                    )
-                  ]))),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        const Text('Sign in',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 30,
+                            )),
+                        SizedBox(width: 15.0),
+                        Container(
+                          height: 50,
+                          width: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            gradient: material.LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                            onPressed: () async {
+                              if (_formKey.currentState!.validate()) {
+                                _signInWithEmailAndPassword();
+                              }
+                            },
+                          ),
+                        )
+                      ]))),
           Container(
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -281,10 +333,15 @@ class _LogInFormState extends State<_LogInForm> {
           _loginMessage = '';
         });
         SignInSharedPreferences.setSignedIn(true);
+        UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
+        if (userDetail != null) {
+          SignInSharedPreferences.setCurrentUserDetails(userDetail);
+        }
         redirectToMainApp(context);
       } else {
         setState(() {
-          _loginMessage = 'No account found with that email. Please sign up or try a different email address.';
+          _loginMessage =
+              'No account found with that email. Please sign up or try a different email address.';
         });
       }
     } catch (e) {
@@ -292,15 +349,18 @@ class _LogInFormState extends State<_LogInForm> {
         //print('e.code: ' + e.code);
         if (e.code == 'user-not-found') {
           setState(() {
-            _loginMessage = 'No account found with that email. Please sign up or try a different email address.';
+            _loginMessage =
+                'No account found with that email. Please sign up or try a different email address.';
           });
         } else if (e.code == 'wrong-password') {
           setState(() {
-            _loginMessage = 'Incorrect password. Please double-check your credentials and try again.';
+            _loginMessage =
+                'Incorrect password. Please double-check your credentials and try again.';
           });
         } else if (e.code == 'too-many-requests') {
           setState(() {
-            _loginMessage = 'Too many incorrect attempts. Please try again later.';
+            _loginMessage =
+                'Too many incorrect attempts. Please try again later.';
           });
         } else if (e.code == 'INVALID_LOGIN_CREDENTIALS') {
           setState(() {
@@ -334,10 +394,15 @@ class _LogInFormState extends State<_LogInForm> {
         builder: (context) => NavBarManager(
           initialIndex: 0,
           searchVolunteeringPage: SearchVolunteeringPage(),
-          feedPage: FeedPage(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,),
+          feedPage: FeedPage(
+            mainNavigatorKey: widget.mainNavigatorKey,
+            logInNavigatorKey: widget.logInNavigatorKey,
+          ),
           //profilePage: ProfilePage(),
           recordVolunteeringPage: RecordVolunteeringPage(),
-          leaderboardPage: LeaderboardPage(isTeamStat: false), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
+          leaderboardPage: LeaderboardPage(),
+          mainNavigatorKey: widget.mainNavigatorKey,
+          logInNavigatorKey: widget.logInNavigatorKey,
         ),
       ),
     );

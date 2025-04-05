@@ -158,7 +158,7 @@ class AttendeesPageState extends State<AttendeesPage> {
           leading: CircleAvatar(
             backgroundImage: NetworkImage(user.profilePhotoUrl),
           ),
-          title: Text(user.forename + " " + user.surname),
+          title: Text(user.name),
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => ColleagueProfilePage(UID: user.UID),

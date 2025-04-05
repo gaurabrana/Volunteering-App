@@ -82,7 +82,7 @@ class _UploadProfilePhotoPageState extends State<UploadProfilePhotoPage> {
                                           feedPage: FeedPage( mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                                           //profilePage: ,
                                           recordVolunteeringPage: RecordVolunteeringPage(),
-                                          leaderboardPage: LeaderboardPage(isTeamStat: false), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
+                                          leaderboardPage: LeaderboardPage(), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
                                         )));
                                   },
                                   child: const Text('OK'),
@@ -99,7 +99,7 @@ class _UploadProfilePhotoPageState extends State<UploadProfilePhotoPage> {
                               feedPage: FeedPage( mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                               //profilePage: ,
                               recordVolunteeringPage: RecordVolunteeringPage(),
-                              leaderboardPage: LeaderboardPage(isTeamStat: false), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
+                              leaderboardPage: LeaderboardPage(), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
                             ),
                                 ));
                       },
@@ -261,7 +261,7 @@ class _UploadProfilePhotoFormState extends State<UploadPhotoForm> {
                                           feedPage: FeedPage( mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey),
                                           //profilePage: ,
                                           recordVolunteeringPage: RecordVolunteeringPage(),
-                                          leaderboardPage: LeaderboardPage(isTeamStat: false), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
+                                          leaderboardPage: LeaderboardPage(), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
                                         ),
                                       ),
                                     );

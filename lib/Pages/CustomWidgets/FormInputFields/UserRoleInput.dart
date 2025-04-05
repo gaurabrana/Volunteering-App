@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 
-class ForenameInputField extends StatefulWidget {
-  final TextEditingController controller;
+enum UserRole { admin, user, organisation }
 
-  const ForenameInputField({super.key, required this.controller});
+class UserRoleFormField extends StatefulWidget {
+  final Function(String) onChange;
+  const UserRoleFormField({super.key, required this.onChange});
 
   @override
-  State<StatefulWidget> createState() => ForenameInputFieldState();
+  _UserRoleFormFieldState createState() => _UserRoleFormFieldState();
 }
 
-class ForenameInputFieldState extends State<ForenameInputField> {
+class _UserRoleFormFieldState extends State<UserRoleFormField> {  
+  UserRole? _selectedRole;
+
+  // Filter out 'admin' role
+  List<UserRole> get _dropdownRoles =>
+      UserRole.values.where((role) => role != UserRole.admin).toList();
+
   @override
-  Widget build(context) {
+  Widget build(BuildContext context) {
     return Container(
-      width: 172,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -26,13 +32,11 @@ class ForenameInputFieldState extends State<ForenameInputField> {
           ),
         ],
       ),
-      child: TextFormField(
-          controller: widget.controller,
-          textInputAction: TextInputAction.next,
-          textCapitalization: TextCapitalization.words,
-          keyboardType: TextInputType.name,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: DropdownButtonFormField<UserRole>(
           decoration: InputDecoration(
-            hintText: 'Forename',
+            hintText: 'Select Role',
             hintStyle: TextStyle(
               color: Colors.grey,
             ),
@@ -58,12 +62,22 @@ class ForenameInputFieldState extends State<ForenameInputField> {
               ),
             ),
           ),
-          validator: (String? value) {
-            if (value!.isEmpty) {
-              return 'Please enter your name';
-            }
-            return null;
-          }),
+          value: _selectedRole,
+          onChanged: (UserRole? newValue) {
+            setState(() {
+              _selectedRole = newValue;
+            });
+            widget.onChange(newValue!.name);
+          },
+          validator: (value) => value == null ? 'Please select a role' : null,
+          items: _dropdownRoles.map((UserRole role) {
+            return DropdownMenuItem<UserRole>(
+              value: role,
+              child: Text(role.name.toUpperCase()), // or format nicely
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 }

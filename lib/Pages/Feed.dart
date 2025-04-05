@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../DataAccessLayer/UserDAO.dart';
 import '../DataAccessLayer/VolunteeringEventDAO.dart';
 import '../DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
 import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
@@ -12,7 +11,6 @@ import '../Models/VolunteeringEvent.dart';
 import 'Leaderboard.dart';
 import 'Messages.dart';
 import 'NavBarManager.dart';
-import 'Profile.dart';
 import 'RecordVolunteering.dart';
 import 'SearchVolunteering.dart';
 import 'VolunteeringEventDetails.dart';
@@ -21,7 +19,10 @@ class FeedPage extends StatefulWidget {
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> logInNavigatorKey;
 
-  const FeedPage({super.key, required this.mainNavigatorKey, required this.logInNavigatorKey});
+  const FeedPage(
+      {super.key,
+      required this.mainNavigatorKey,
+      required this.logInNavigatorKey});
 
   @override
   State<StatefulWidget> createState() => FeedPageState();
@@ -29,16 +30,10 @@ class FeedPage extends StatefulWidget {
 
 class FeedPageState extends State<FeedPage> {
   int _overallIndividualRank = 0;
-  int _teamIndividualRank = 0;
-  int _yourTeamsRank = 0;
-  late String _yourTeamId;
   bool areYourRanksLoading = true;
-  bool isYourTeamsRankLoading = true;
   bool _areHoursLoading = true;
   int _mostRecentBadge = 0;
   late List<LeaderboardStatistic> individualLeaderboardStatistics;
-  late List<LeaderboardStatistic> teamLeaderboardStatistics;
-  late List<LeaderboardStatistic> individualWithinTeamLeaderboardStatistics;
   bool _hasUnreadChats = false;
   bool hasUnreadChatsLoading = false;
 
@@ -56,15 +51,10 @@ class FeedPageState extends State<FeedPage> {
     _hasUnreadChats = false;
     hasUnreadChatsLoading = false;
     _overallIndividualRank = 0;
-    _teamIndividualRank = 0;
-    _yourTeamsRank = 0;
-    _yourTeamId = "";
     areYourRanksLoading = true;
-    isYourTeamsRankLoading = true;
     _areHoursLoading = true;
     _mostRecentBadge = 0;
     individualLeaderboardStatistics = [];
-    teamLeaderboardStatistics = [];
     areLeaderboardStatsLoading = true;
     upcomingVolunteeringEvents = [];
     areVolunteeringEventsLoading = true;
@@ -72,35 +62,20 @@ class FeedPageState extends State<FeedPage> {
 
   Future<void> _fetchData() async {
     initialiseData();
-    await _fetchYourTeamId();
     await _fetchLeaderboardStats();
     await _fetchYourRanks();
     await _fetchYourHours();
-    await getTeamOverallRank();
     await _fetchVolunteeringEvents();
     await _fetchHasUnreadChats();
-  }
-
-  Future<void> _fetchYourTeamId() async {
-    String? teamID = await UserDAO.getUserTeam(FirebaseAuth.instance.currentUser!.uid);
-    setState(() {
-      _yourTeamId = teamID!;
-    });
   }
 
   Future<void> _fetchLeaderboardStats() async {
     try {
       List<LeaderboardStatistic> individualStats =
-          await VolunteeringHistoryDAO.getLeaderboardStatistics(DateTime.now().add(Duration(days: -365)), DateTime.now(), "Any");
-      List<LeaderboardStatistic> teamStats =
-          await VolunteeringHistoryDAO.getTeamLeaderboardStatistics(DateTime.now().add(Duration(days: -365)), DateTime.now(), "Any");
-      List<LeaderboardStatistic> individualWithinTeamStats = await VolunteeringHistoryDAO.getLeaderboardStatisticsWithinTeamUsingTeamId(
-          DateTime.now().add(Duration(days: -365)), DateTime.now(), "Any", _yourTeamId);
-
+          await VolunteeringHistoryDAO.getLeaderboardStatistics(
+              DateTime.now().add(Duration(days: -365)), DateTime.now(), "Any");
       setState(() {
         individualLeaderboardStatistics = individualStats;
-        teamLeaderboardStatistics = teamStats;
-        individualWithinTeamLeaderboardStatistics = individualWithinTeamStats;
         areLeaderboardStatsLoading = false;
       });
     } catch (error) {
@@ -110,42 +85,18 @@ class FeedPageState extends State<FeedPage> {
 
   Future<void> _fetchYourRanks() async {
     int userRank = 0;
-    int teamRank = 0;
 
     for (int i = 0; i < individualLeaderboardStatistics.length; i++) {
-      if (individualLeaderboardStatistics[i].ID == FirebaseAuth.instance.currentUser?.uid) {
+      if (individualLeaderboardStatistics[i].ID ==
+          FirebaseAuth.instance.currentUser?.uid) {
         userRank = individualLeaderboardStatistics[i].rank;
-        break;
-      }
-    }
-
-    for (int i = 0; i < individualWithinTeamLeaderboardStatistics.length; i++) {
-      if (individualWithinTeamLeaderboardStatistics[i].ID == FirebaseAuth.instance.currentUser?.uid) {
-        teamRank = individualWithinTeamLeaderboardStatistics[i].rank;
         break;
       }
     }
 
     setState(() {
       _overallIndividualRank = userRank;
-      _teamIndividualRank = teamRank;
       areYourRanksLoading = false;
-    });
-  }
-
-  Future<void> getTeamOverallRank() async {
-    String? teamID = await UserDAO.getUserTeam(FirebaseAuth.instance.currentUser!.uid);
-    int teamRank = 0;
-
-    for (int i = 0; i < teamLeaderboardStatistics.length; i++) {
-      if (teamLeaderboardStatistics[i].ID == teamID) {
-        teamRank = teamLeaderboardStatistics[i].rank;
-        break;
-      }
-    }
-    setState(() {
-      _yourTeamsRank = teamRank;
-      isYourTeamsRankLoading = false;
     });
   }
 
@@ -179,10 +130,13 @@ class FeedPageState extends State<FeedPage> {
     try {
       List<VolunteeringEvent> upcomingVolunteering = [];
 
-      List<String> allEventIds = await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(FirebaseAuth.instance.currentUser!.uid);
+      List<String> allEventIds =
+          await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(
+              FirebaseAuth.instance.currentUser!.uid);
 
       for (var eventId in allEventIds) {
-        VolunteeringEvent? event = await VolunteeringEventDAO.getVolunteeringEvent(eventId);
+        VolunteeringEvent? event =
+            await VolunteeringEventDAO.getVolunteeringEvent(eventId);
 
         if (event!.date.isAfter(DateTime.now())) {
           upcomingVolunteering.add(event!);
@@ -217,30 +171,27 @@ class FeedPageState extends State<FeedPage> {
         onRefresh: _fetchData,
         child: SingleChildScrollView(
             child: Padding(
-                padding: const EdgeInsets.only(top: 40, left: 30, right: 30, bottom: 20),
+                padding: const EdgeInsets.only(
+                    top: 40, left: 30, right: 30, bottom: 20),
                 child: Column(children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text(
-                      'Feed',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                        decorationColor: Colors.black,
-                      ),
-                    ),
-                    buildMessagesButton(context),
-                  ]),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Feed',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30,
+                            decorationColor: Colors.black,
+                          ),
+                        ),
+                        buildMessagesButton(context),
+                      ]),
                   SizedBox(height: 25),
                   buildYourRanks(context),
                   SizedBox(height: 25),
-                  Row(
-                    children: [
-                      buildYourTeamsRank(context),
-                      SizedBox(width: 25),
-                      buildRecentProfileBadge(context),
-                    ],
-                  ),
+                  buildRecentProfileBadge(context),
                   SizedBox(height: 25),
                   buildTop3Individuals(context),
                   SizedBox(height: 25),
@@ -361,7 +312,8 @@ class FeedPageState extends State<FeedPage> {
   }
 
   Widget buildYourRanks(BuildContext context) {
-    return GestureDetector( //todo this shouldnt make a new nav bar manager should have a call back to change ht ein dec
+    return GestureDetector(
+        //todo this shouldnt make a new nav bar manager should have a call back to change ht ein dec
         onTap: () {
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => NavBarManager(
@@ -370,12 +322,15 @@ class FeedPageState extends State<FeedPage> {
                     feedPage: widget,
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
-                    leaderboardPage: LeaderboardPage(isTeamStat: false), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
+                    leaderboardPage: LeaderboardPage(),
+                    mainNavigatorKey: widget.mainNavigatorKey,
+                    logInNavigatorKey: widget.logInNavigatorKey,
                   )));
         },
         child: Container(
           width: 324,
-          padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 30),
+          padding:
+              const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 30),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(30.0),
@@ -401,13 +356,7 @@ class FeedPageState extends State<FeedPage> {
               const SizedBox(height: 10),
               areYourRanksLoading
                   ? const CircularProgressIndicator()
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStat(_overallIndividualRank, 'Overall'),
-                        _buildStat(_teamIndividualRank, 'In your team'),
-                      ],
-                    ),
+                  : _buildStat(_overallIndividualRank, 'Overall'),
             ],
           ),
         ));
@@ -423,12 +372,15 @@ class FeedPageState extends State<FeedPage> {
                     feedPage: widget,
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
-                    leaderboardPage: LeaderboardPage(isTeamStat: true), mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
+                    leaderboardPage: LeaderboardPage(),
+                    mainNavigatorKey: widget.mainNavigatorKey,
+                    logInNavigatorKey: widget.logInNavigatorKey,
                   )));
         },
         child: Container(
           width: 324,
-          padding: const EdgeInsets.only(top: 20, left: 10, right: 10, bottom: 10),
+          padding:
+              const EdgeInsets.only(top: 20, left: 10, right: 10, bottom: 10),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(30.0),
@@ -457,12 +409,18 @@ class FeedPageState extends State<FeedPage> {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: individualLeaderboardStatistics.take(3).toList().asMap().entries.map((entry) {
+                      children: individualLeaderboardStatistics
+                          .take(3)
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) {
                         int index = entry.key + 1;
                         LeaderboardStatistic individual = entry.value;
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundImage: NetworkImage(individual.profilePhotoURL),
+                            backgroundImage:
+                                NetworkImage(individual.profilePhotoURL),
                           ),
                           title: Text(
                             '${index.toString()}${_getRankSuffix(index)} - ${individual.name}',
@@ -480,75 +438,28 @@ class FeedPageState extends State<FeedPage> {
         ));
   }
 
-  Widget buildYourTeamsRank(BuildContext context) {
-    return GestureDetector(
-        onTap: () {
-          Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => NavBarManager(
-                    initialIndex: 1,
-                    searchVolunteeringPage: SearchVolunteeringPage(),
-                    feedPage: widget,
-                    //profilePage: ProfilePage(),
-                    recordVolunteeringPage: RecordVolunteeringPage(),
-                    leaderboardPage: LeaderboardPage(isTeamStat: true),mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
-                  )));
-        },
-        child: Container(
-          width: 149.5,
-          height: 180,
-          padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 10,
-                blurRadius: 15,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Your team's rank",
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  isYourTeamsRankLoading ? const CircularProgressIndicator() : _buildStat(_yourTeamsRank, 'Overall'),
-                ],
-              ),
-            ],
-          ),
-        ));
-  }
-
   Widget buildRecentProfileBadge(BuildContext context) {
     return GestureDetector(
         onTap: () {
           Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => NavBarManager( // todo dont make here.
+              builder: (context) => NavBarManager(
+                    // todo dont make here.
                     initialIndex: 4,
                     searchVolunteeringPage: SearchVolunteeringPage(),
                     feedPage: widget,
                     //profilePage: ProfilePage(),
                     recordVolunteeringPage: RecordVolunteeringPage(),
-                    leaderboardPage: LeaderboardPage(isTeamStat: true),mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.logInNavigatorKey,
+                    leaderboardPage: LeaderboardPage(),
+                    mainNavigatorKey: widget.mainNavigatorKey,
+                    logInNavigatorKey: widget.logInNavigatorKey,
                   )));
         },
         child: Container(
           width: 149.5,
           height: 180,
           alignment: Alignment.center,
-          padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 20),
+          padding:
+              const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(30.0),
@@ -579,7 +490,9 @@ class FeedPageState extends State<FeedPage> {
                         width: 98,
                       )
                     : Image.asset(
-                        'assets/images/badges/' + _mostRecentBadge.toString() + '_hours.png',
+                        'assets/images/badges/' +
+                            _mostRecentBadge.toString() +
+                            '_hours.png',
                         height: 90,
                         width: 98,
                       ),
@@ -638,7 +551,8 @@ class FeedPageState extends State<FeedPage> {
               InkWell(
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => VolunteeringEventDetailsPage(volunteeringEvent: event),
+                    builder: (context) =>
+                        VolunteeringEventDetailsPage(volunteeringEvent: event),
                   ));
                 },
                 child: Row(
@@ -664,7 +578,8 @@ class FeedPageState extends State<FeedPage> {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.location_on_rounded, color: Colors.grey.shade500, size: 15),
+                              Icon(Icons.location_on_rounded,
+                                  color: Colors.grey.shade500, size: 15),
                               SizedBox(width: 5),
                               Container(
                                 constraints: BoxConstraints(maxWidth: 160),
@@ -720,23 +635,28 @@ class FeedPageState extends State<FeedPage> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
-            padding: const EdgeInsets.only(top: 5, left: 5, right: 10, bottom: 5),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text(
-                " Upcoming events",
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(upcomingVolunteeringEvents.length.toString(),
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey.shade600,
-                  )),
-            ])),
-        areVolunteeringEventsLoading ? const CircularProgressIndicator() : Column(children: getWidgets())
+            padding:
+                const EdgeInsets.only(top: 5, left: 5, right: 10, bottom: 5),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    " Upcoming events",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(upcomingVolunteeringEvents.length.toString(),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade600,
+                      )),
+                ])),
+        areVolunteeringEventsLoading
+            ? const CircularProgressIndicator()
+            : Column(children: getWidgets())
       ]),
     );
   }
@@ -745,14 +665,20 @@ class FeedPageState extends State<FeedPage> {
     try {
       final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-      final chatQuerySnapshot = await FirebaseFirestore.instance.collection('chats').where('users', arrayContains: currentUserId).get();
+      final chatQuerySnapshot = await FirebaseFirestore.instance
+          .collection('chats')
+          .where('users', arrayContains: currentUserId)
+          .get();
 
       for (final chatDoc in chatQuerySnapshot.docs) {
         final usersCollectionRef = chatDoc.reference.collection('users');
 
-        final userDocSnapshot = await usersCollectionRef.where('user', isEqualTo: currentUserId).get();
+        final userDocSnapshot = await usersCollectionRef
+            .where('user', isEqualTo: currentUserId)
+            .get();
 
-        final bool isRead = userDocSnapshot.docs.isNotEmpty && userDocSnapshot.docs.first['read'];
+        final bool isRead = userDocSnapshot.docs.isNotEmpty &&
+            userDocSnapshot.docs.first['read'];
 
         if (!isRead) {
           return true;

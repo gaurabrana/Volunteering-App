@@ -1,7 +1,7 @@
 import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
 import 'package:HeartOfExperian/Pages/CustomWidgets/VolunteeringTypePieChart.dart';
 import 'package:HeartOfExperian/Pages/Settings/Settings.dart';
-import 'package:HeartOfExperian/Pages/Team.dart';
+import 'package:HeartOfExperian/Pages/Settings/SharedPreferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 
 import '../DataAccessLayer/FollowingDAO.dart';
 import '../DataAccessLayer/PhotoDAO.dart';
-import '../DataAccessLayer/TeamDAO.dart';
 import '../DataAccessLayer/UserDAO.dart';
 import '../DataAccessLayer/VolunteeringEventDAO.dart';
 import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
@@ -17,19 +16,17 @@ import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
 import '../Models/VolunteeringHistory.dart';
 import 'CustomWidgets/VolunteeringGraph.dart';
-import 'Feed.dart';
 import 'Following.dart';
-import 'Leaderboard.dart';
-import 'NavBarManager.dart';
-import 'RecordVolunteering.dart';
-import 'SearchVolunteering.dart';
 import 'VolunteeringEventDetails.dart';
 
 class ProfilePage extends StatefulWidget {
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> loginNavigatorKey;
 
-  const ProfilePage({super.key, required this.loginNavigatorKey, required this.mainNavigatorKey});
+  const ProfilePage(
+      {super.key,
+      required this.loginNavigatorKey,
+      required this.mainNavigatorKey});
 
   @override
   State<StatefulWidget> createState() => ProfilePageState();
@@ -46,7 +43,6 @@ class ProfilePageState extends State<ProfilePage> {
   late UserDetails _userDetails;
   late String _photoURL;
   late int following;
-  late String _teamName;
 
   late int _hoursThisMonth;
   late int _hoursThisYear;
@@ -55,7 +51,8 @@ class ProfilePageState extends State<ProfilePage> {
   late bool isVolunteeringHistoryLoading;
   late List<VolunteeringHistory> _volunteeringHistory;
 
-  TextEditingController financialYearTextEditingController = new TextEditingController();
+  TextEditingController financialYearTextEditingController =
+      new TextEditingController();
   int _financialYearShownOnGraph = 24;
   int selectedYearIndex = 0;
 
@@ -99,7 +96,6 @@ class ProfilePageState extends State<ProfilePage> {
       completedVolunteeringEvents = [];
       areVolunteeringEventsLoading = true;
       selectedYearIndex = 0;
-      _teamName = "";
       areFollowingLoading = true;
     });
   }
@@ -116,7 +112,8 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _fetchNumberFollowing() async {
-    int num = await FollowingDAO.getNumberFollowing(FirebaseAuth.instance.currentUser!.uid);
+    int num = await FollowingDAO.getNumberFollowing(
+        FirebaseAuth.instance.currentUser!.uid);
     setState(() {
       following = num;
       areFollowingLoading = false;
@@ -128,7 +125,8 @@ class ProfilePageState extends State<ProfilePage> {
     User? user = auth.currentUser;
 
     try {
-      String photoURL = await PhotoDAO.getUserProfilePhotoUrlFromFirestore(user?.uid);
+      String photoURL =
+          await PhotoDAO.getUserProfilePhotoUrlFromFirestore(user?.uid);
       setState(() {
         _photoURL = photoURL;
         isPhotoLoading = false;
@@ -140,17 +138,16 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchUserDetails() async {
     try {
-      FirebaseAuth auth = FirebaseAuth.instance;
-      User? user = auth.currentUser;
-      UserDetails? userDetails = await UserDAO.getUserDetails(user?.uid);
-      String? teamName = await TeamDAO.getTeamName(userDetails!.team!);
-      setState(() {
-        _userDetails = userDetails!;
-        _teamName = teamName!;
-        areUserDetailsLoading = false;
-      });
+      UserDetails? userDetails =
+          await SignInSharedPreferences.getCurrentUserDetails();
+      if (userDetails != null) {
+        setState(() {
+          _userDetails = userDetails!;
+          areUserDetailsLoading = false;
+        });
+      }
     } catch (e) {
-      //print('Error fetching user details: $e');
+      print('Error fetching user details: $e');
     }
   }
 
@@ -159,9 +156,14 @@ class ProfilePageState extends State<ProfilePage> {
       FirebaseAuth auth = FirebaseAuth.instance;
       User? user = auth.currentUser;
 
-      int monthHours = await VolunteeringHistoryDAO.getUsersVolunteeringHoursOfPastMonth(user?.uid, "Any");
-      int yearHours = await VolunteeringHistoryDAO.getUsersVolunteeringHoursThisFinancialYear(user?.uid, "Any");
-      int allTimeHours = await VolunteeringHistoryDAO.getUsersAllTimeVolunteeringHours(user?.uid);
+      int monthHours =
+          await VolunteeringHistoryDAO.getUsersVolunteeringHoursOfPastMonth(
+              user?.uid, "Any");
+      int yearHours = await VolunteeringHistoryDAO
+          .getUsersVolunteeringHoursThisFinancialYear(user?.uid, "Any");
+      int allTimeHours =
+          await VolunteeringHistoryDAO.getUsersAllTimeVolunteeringHours(
+              user?.uid);
       setState(() {
         _hoursThisMonth = monthHours;
         _hoursThisYear = yearHours;
@@ -179,7 +181,9 @@ class ProfilePageState extends State<ProfilePage> {
       FirebaseAuth auth = FirebaseAuth.instance;
       User? user = auth.currentUser;
 
-      List<VolunteeringHistory>? volunteeringHistory = await VolunteeringHistoryDAO.getAllUsersVolunteeringHistory(user?.uid);
+      List<VolunteeringHistory>? volunteeringHistory =
+          await VolunteeringHistoryDAO.getAllUsersVolunteeringHistory(
+              user?.uid);
       setState(() {
         if (volunteeringHistory != null) {
           _volunteeringHistory = volunteeringHistory;
@@ -202,25 +206,24 @@ class ProfilePageState extends State<ProfilePage> {
       List<VolunteeringEvent> upcomingVolunteering = [];
       List<VolunteeringEvent> completedVolunteering = [];
 
-      List<String> allEventIds = await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(FirebaseAuth.instance.currentUser!.uid);
+      List<String> allEventIds =
+          await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(
+              FirebaseAuth.instance.currentUser!.uid);
 
       for (var eventId in allEventIds) {
-        VolunteeringEvent? event = await VolunteeringEventDAO.getVolunteeringEvent(eventId);
+        VolunteeringEvent? event =
+            await VolunteeringEventDAO.getVolunteeringEvent(eventId);
 
         if (event!.date.isAfter(DateTime.now())) {
-          upcomingVolunteering.add(event!);
+          upcomingVolunteering.add(event);
         } else {
-          completedVolunteering.add(event!);
+          completedVolunteering.add(event);
         }
       }
 
       setState(() {
-        if (upcomingVolunteeringEvents != null) {
-          upcomingVolunteeringEvents.addAll(upcomingVolunteering!);
-        }
-        if (completedVolunteeringEvents != null) {
-          completedVolunteeringEvents.addAll(completedVolunteering!);
-        }
+        upcomingVolunteeringEvents.addAll(upcomingVolunteering);
+        completedVolunteeringEvents.addAll(completedVolunteering);
         areVolunteeringEventsLoading = false;
       });
     } catch (e) {
@@ -230,34 +233,35 @@ class ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(context) {
-    return Scaffold(body:RefreshIndicator(
-        onRefresh: _fetchData,
-        child: SingleChildScrollView(
-            child: Padding(
-          padding: const EdgeInsets.only(top: 40, left: 30, right: 30, bottom: 20),
-          child: Column(
-            children: [
-              buildSettingsButton(context),
-              buildProfilePhoto(context),
-              const SizedBox(height: 20),
-              buildProfileName(context),
-              buildTeamButton(context),
-              buildFollowingButton(context),
-              const SizedBox(height: 10),
-              buildHistoricalHoursSection(context),
-              const SizedBox(height: 25),
-              buildProfileBadges(context),
-              const SizedBox(height: 25),
-              buildVolunteeringGraph(context),
-              const SizedBox(height: 25),
-              buildUpcomingVolunteering(context),
-              const SizedBox(height: 25),
-              buildCompletedVolunteering(context),
-              const SizedBox(height: 25),
-              buildVolunteeringTypePieChart(context),
-            ],
-          ),
-        ))));
+    return Scaffold(
+        body: RefreshIndicator(
+            onRefresh: _fetchData,
+            child: SingleChildScrollView(
+                child: Padding(
+              padding: const EdgeInsets.only(
+                  top: 40, left: 30, right: 30, bottom: 20),
+              child: Column(
+                children: [
+                  buildSettingsButton(context),
+                  buildProfilePhoto(context),
+                  const SizedBox(height: 20),
+                  buildProfileName(context),
+                  buildFollowingButton(context),
+                  const SizedBox(height: 10),
+                  buildHistoricalHoursSection(context),
+                  const SizedBox(height: 25),
+                  buildProfileBadges(context),
+                  const SizedBox(height: 25),
+                  buildVolunteeringGraph(context),
+                  const SizedBox(height: 25),
+                  buildUpcomingVolunteering(context),
+                  const SizedBox(height: 25),
+                  buildCompletedVolunteering(context),
+                  const SizedBox(height: 25),
+                  buildVolunteeringTypePieChart(context),
+                ],
+              ),
+            ))));
   }
 
   Widget buildSettingsButton(BuildContext context) {
@@ -286,10 +290,19 @@ class ProfilePageState extends State<ProfilePage> {
         child: Center(
           child: IconButton(
             onPressed: () {
-              Navigator.of(context).push(
+              Navigator.of(context)
+                  .push(
                 MaterialPageRoute(
-                  builder: (context) => SettingsPage(mainNavigatorKey: widget.mainNavigatorKey, logInNavigatorKey: widget.loginNavigatorKey,),
+                  builder: (context) => SettingsPage(
+                    mainNavigatorKey: widget.mainNavigatorKey,
+                    logInNavigatorKey: widget.loginNavigatorKey,
+                  ),
                 ),
+              )
+                  .then(
+                (value) {
+                  _fetchUserDetails();
+                },
               );
             },
             icon: const Icon(
@@ -329,7 +342,8 @@ class ProfilePageState extends State<ProfilePage> {
                         width: 150,
                         height: 150,
                         fit: BoxFit.cover,
-                        loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                        loadingBuilder: (BuildContext context, Widget child,
+                            ImageChunkEvent? loadingProgress) {
                           if (loadingProgress == null) {
                             // Image has finished loading
                             return child;
@@ -338,7 +352,8 @@ class ProfilePageState extends State<ProfilePage> {
                             return const CircularProgressIndicator();
                           }
                         },
-                        errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+                        errorBuilder: (BuildContext context, Object exception,
+                            StackTrace? stackTrace) {
                           return const Text('Failed to load image');
                         },
                       )
@@ -353,7 +368,7 @@ class ProfilePageState extends State<ProfilePage> {
       child: areUserDetailsLoading
           ? const CircularProgressIndicator()
           : Text(
-              _userDetails.forename + " " + _userDetails.surname,
+              _userDetails.name,
               textAlign: TextAlign.left,
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
@@ -364,30 +379,11 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget buildTeamButton(BuildContext context) {
-    return TextButton(
-        onPressed: () async {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => TeamPage(teamId: _userDetails.team)),
-          );
-        },
-        child: areUserDetailsLoading
-            ? const CircularProgressIndicator()
-            : Text(_teamName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  decorationColor: Colors.black,
-                )));
-  } //todo make this button prettier
-
   Widget buildFollowingButton(BuildContext context) {
     return TextButton(
       onPressed: () {
         Navigator.of(context).push(
-          MaterialPageRoute(
-              builder: (context) => FollowingPage()),
+          MaterialPageRoute(builder: (context) => FollowingPage()),
         );
       },
       child: Row(
@@ -401,7 +397,10 @@ class ProfilePageState extends State<ProfilePage> {
               ? CircularProgressIndicator()
               : Text(
                   following.toString(),
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black),
                 ),
         ],
       ),
@@ -519,10 +518,12 @@ class ProfilePageState extends State<ProfilePage> {
 
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
-        : (completedVolunteeringEvents.isNotEmpty || upcomingVolunteeringEvents.isNotEmpty)
+        : (completedVolunteeringEvents.isNotEmpty ||
+                upcomingVolunteeringEvents.isNotEmpty)
             ? Container(
                 alignment: Alignment.center,
-                padding: const EdgeInsets.only(top: 5, left: 25, right: 20, bottom: 10),
+                padding: const EdgeInsets.only(
+                    top: 5, left: 25, right: 20, bottom: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30.0),
@@ -569,7 +570,8 @@ class ProfilePageState extends State<ProfilePage> {
             onPressed: () {
               _showFilterPopup();
             },
-            icon: const FaIcon(FontAwesomeIcons.sliders, color: Colors.white, size: 25), //todo adjust thickness
+            icon: const FaIcon(FontAwesomeIcons.sliders,
+                color: Colors.white, size: 25), //todo adjust thickness
             color: Color(0xFF4136F1),
           ),
         ),
@@ -587,20 +589,28 @@ class ProfilePageState extends State<ProfilePage> {
           setState(() {
             selectedYearIndex = i;
             _financialYearShownOnGraph = recentFYs[selectedYearIndex];
-            financialYearTextEditingController.text = _financialYearShownOnGraph.toString();
+            financialYearTextEditingController.text =
+                _financialYearShownOnGraph.toString();
           });
         },
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
             return Colors.white;
           }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
-            return selectedYearIndex == i // todo the old button style is not changing back
+          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+              (Set<MaterialState> states) {
+            return selectedYearIndex ==
+                    i // todo the old button style is not changing back
                 ? TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.normal);
+                : TextStyle(
+                    color: Colors.grey.shade600, fontWeight: FontWeight.normal);
           }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
-            return selectedYearIndex == i ? BorderSide(color: Colors.purple, width: 2.0) : BorderSide(color: Colors.grey, width: 1.0);
+          side: MaterialStateProperty.resolveWith<BorderSide>(
+              (Set<MaterialState> states) {
+            return selectedYearIndex == i
+                ? BorderSide(color: Colors.purple, width: 2.0)
+                : BorderSide(color: Colors.grey, width: 1.0);
           }),
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
@@ -611,7 +621,10 @@ class ProfilePageState extends State<ProfilePage> {
         child: Text(
           "FY${recentFYs[i]}",
           style: selectedYearIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
+              ? const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins')
               : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
         ),
       ));
@@ -631,22 +644,25 @@ class ProfilePageState extends State<ProfilePage> {
               decorationColor: Colors.black,
             ),
           ),
-          content: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            const Text(
-              'Financial Year',
-              textAlign: TextAlign.left,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 17,
-                decorationColor: Colors.black,
-              ),
-            ),
-            Wrap(
-              spacing: 10.0, // spacing between buttons
-              runSpacing: 1.0, // spacing between rows
-              children: widgets,
-            )
-          ]),
+          content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Financial Year',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    decorationColor: Colors.black,
+                  ),
+                ),
+                Wrap(
+                  spacing: 10.0, // spacing between buttons
+                  runSpacing: 1.0, // spacing between rows
+                  children: widgets,
+                )
+              ]),
           actions: <Widget>[
             // todo company averages.!!!
             Container(
@@ -670,28 +686,33 @@ class ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 child: Center(
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                  TextButton(
-                      onPressed: () async {
-                        int newFinancialYear = int.tryParse(financialYearTextEditingController.text) ?? 24;
-                        setState(() {
-                          _financialYearShownOnGraph = newFinancialYear;
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      child: Container(
-                        height: 40,
-                        width: 310,
-                        alignment: Alignment.center,
-                        child: const Text("Save",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            )),
-                      )),
-                ])))
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                      TextButton(
+                          onPressed: () async {
+                            int newFinancialYear = int.tryParse(
+                                    financialYearTextEditingController.text) ??
+                                24;
+                            setState(() {
+                              _financialYearShownOnGraph = newFinancialYear;
+                            });
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            height: 40,
+                            width: 310,
+                            alignment: Alignment.center,
+                            child: const Text("Save",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                )),
+                          )),
+                    ])))
           ],
         );
       },
@@ -722,7 +743,8 @@ class ProfilePageState extends State<ProfilePage> {
         ? const CircularProgressIndicator()
         : Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.only(top: 20, left: 0, right: 0, bottom: 20),
+            padding:
+                const EdgeInsets.only(top: 20, left: 0, right: 0, bottom: 20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(30.0),
@@ -746,7 +768,8 @@ class ProfilePageState extends State<ProfilePage> {
                     if (_5_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 5, 'assets/images/badges/5_hours.png');
+                          showCongratulationDialog(
+                              context, 5, 'assets/images/badges/5_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/5_hours.png',
@@ -763,7 +786,8 @@ class ProfilePageState extends State<ProfilePage> {
                     if (_10_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 10, 'assets/images/badges/10_hours.png');
+                          showCongratulationDialog(
+                              context, 10, 'assets/images/badges/10_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/10_hours.png',
@@ -780,7 +804,8 @@ class ProfilePageState extends State<ProfilePage> {
                     if (_15_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 15, 'assets/images/badges/15_hours.png');
+                          showCongratulationDialog(
+                              context, 15, 'assets/images/badges/15_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/15_hours.png',
@@ -804,7 +829,8 @@ class ProfilePageState extends State<ProfilePage> {
                     if (_30_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 30, 'assets/images/badges/30_hours.png');
+                          showCongratulationDialog(
+                              context, 30, 'assets/images/badges/30_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/30_hours.png',
@@ -821,7 +847,8 @@ class ProfilePageState extends State<ProfilePage> {
                     if (_50_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 50, 'assets/images/badges/50_hours.png');
+                          showCongratulationDialog(
+                              context, 50, 'assets/images/badges/50_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/50_hours.png',
@@ -838,7 +865,8 @@ class ProfilePageState extends State<ProfilePage> {
                     if (_100_hour_badge_earned)
                       GestureDetector(
                         onTap: () {
-                          showCongratulationDialog(context, 100, 'assets/images/badges/100_hours.png');
+                          showCongratulationDialog(context, 100,
+                              'assets/images/badges/100_hours.png');
                         },
                         child: Image.asset(
                           'assets/images/badges/100_hours.png',
@@ -938,7 +966,8 @@ class ProfilePageState extends State<ProfilePage> {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.location_on_rounded, color: Colors.grey.shade500, size: 15),
+                              Icon(Icons.location_on_rounded,
+                                  color: Colors.grey.shade500, size: 15),
                               SizedBox(width: 5),
                               Container(
                                 constraints: BoxConstraints(maxWidth: 160),
@@ -954,7 +983,8 @@ class ProfilePageState extends State<ProfilePage> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 4), // Spacer between location and date
+                          SizedBox(
+                              height: 4), // Spacer between location and date
                           Text(
                             "${DateFormat('dd/MM/yy').format(event.date)}",
                             style: TextStyle(
@@ -981,7 +1011,8 @@ class ProfilePageState extends State<ProfilePage> {
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
         : Container(
-            padding: const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
+            padding:
+                const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30.0),
               color: Colors.white,
@@ -994,24 +1025,28 @@ class ProfilePageState extends State<ProfilePage> {
                 ),
               ],
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Padding(
-                  padding: const EdgeInsets.only(top: 5, left: 5, right: 10, bottom: 5),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text(
-                      " Upcoming",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(upcomingVolunteeringEvents.length.toString(),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey.shade600,
-                        )),
-                  ])),
+                  padding: const EdgeInsets.only(
+                      top: 5, left: 5, right: 10, bottom: 5),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          " Upcoming",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(upcomingVolunteeringEvents.length.toString(),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade600,
+                            )),
+                      ])),
               Column(children: getWidgets())
             ]),
           );
@@ -1068,7 +1103,8 @@ class ProfilePageState extends State<ProfilePage> {
               InkWell(
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => VolunteeringEventDetailsPage(volunteeringEvent: event),
+                    builder: (context) =>
+                        VolunteeringEventDetailsPage(volunteeringEvent: event),
                   ));
                 },
                 child: Row(
@@ -1094,7 +1130,8 @@ class ProfilePageState extends State<ProfilePage> {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.location_on_rounded, color: Colors.grey.shade500, size: 15),
+                              Icon(Icons.location_on_rounded,
+                                  color: Colors.grey.shade500, size: 15),
                               SizedBox(width: 5),
                               Container(
                                 constraints: BoxConstraints(maxWidth: 160),
@@ -1138,7 +1175,8 @@ class ProfilePageState extends State<ProfilePage> {
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
         : Container(
-            padding: const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
+            padding:
+                const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30.0),
               color: Colors.white,
@@ -1151,41 +1189,48 @@ class ProfilePageState extends State<ProfilePage> {
                 ),
               ],
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Padding(
-                  padding: const EdgeInsets.only(top: 5, left: 5, right: 10, bottom: 5),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text(
-                      " Completed",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(completedVolunteeringEvents.length.toString(),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey.shade600,
-                        )),
-                  ])),
+                  padding: const EdgeInsets.only(
+                      top: 5, left: 5, right: 10, bottom: 5),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          " Completed",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(completedVolunteeringEvents.length.toString(),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade600,
+                            )),
+                      ])),
               Column(children: getWidgets())
             ]),
           );
   }
 
-  void showCongratulationDialog(BuildContext context, int hours, String badgePhotoURL) {
+  void showCongratulationDialog(
+      BuildContext context, int hours, String badgePhotoURL) {
     String title = "";
     String message = "";
 
     switch (hours) {
       case 5:
         title = "Blossoming Volunteer";
-        message = "Congratulations on completing 5 hours of volunteering! Keep spreading your positivity and watch your garden of impact grow!";
+        message =
+            "Congratulations on completing 5 hours of volunteering! Keep spreading your positivity and watch your garden of impact grow!";
         break;
       case 10:
         title = "Galactic Volunteer";
-        message = "You've reached 10 hours of volunteering! Your impact is out of this world. Keep shining bright!";
+        message =
+            "You've reached 10 hours of volunteering! Your impact is out of this world. Keep shining bright!";
         break;
       case 15:
         title = "Soaring Volunteer";

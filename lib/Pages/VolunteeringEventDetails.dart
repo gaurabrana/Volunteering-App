@@ -24,13 +24,16 @@ import 'CustomWidgets/BackButton.dart';
 class VolunteeringEventDetailsPage extends StatefulWidget {
   final VolunteeringEvent volunteeringEvent;
 
-  const VolunteeringEventDetailsPage({Key? key, required this.volunteeringEvent}) : super(key: key);
+  const VolunteeringEventDetailsPage(
+      {Key? key, required this.volunteeringEvent})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => VolunteeringEventDetailsPageState();
 }
 
-class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPage> {
+class VolunteeringEventDetailsPageState
+    extends State<VolunteeringEventDetailsPage> {
   bool areOrganiserDetailsLoading = true;
   late UserDetails _organiserDetails;
   late List<UserDetails> _attendees;
@@ -56,7 +59,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
 
   Future<void> fetchOrganiserDetails() async {
     try {
-      UserDetails? userDetails = await UserDAO.getUserDetails(widget.volunteeringEvent.organiserUID);
+      UserDetails? userDetails =
+          await UserDAO.getUserDetails(widget.volunteeringEvent.organiserUID);
       setState(() {
         _organiserDetails = userDetails!;
         areOrganiserDetailsLoading = false;
@@ -69,7 +73,9 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
   Future<void> fetchAttendees() async {
     try {
       List<UserDetails> attendees = [];
-      List<String> attendeeIds = await VolunteeringEventRegistrationsDAO.getAllUserIdsForEvent(widget.volunteeringEvent.reference.id);
+      List<String> attendeeIds =
+          await VolunteeringEventRegistrationsDAO.getAllUserIdsForEvent(
+              widget.volunteeringEvent.reference.id);
 
       if (attendeeIds.contains(FirebaseAuth.instance.currentUser!.uid)) {
         setState(() {
@@ -101,7 +107,9 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
   Future<void> fetchIsFavourite() async {
     try {
       bool favourite =
-          await VolunteeringEventFavouritesDAO.isEventFavouritedByUser(FirebaseAuth.instance.currentUser!.uid, widget.volunteeringEvent.reference.id);
+          await VolunteeringEventFavouritesDAO.isEventFavouritedByUser(
+              FirebaseAuth.instance.currentUser!.uid,
+              widget.volunteeringEvent.reference.id);
 
       setState(() {
         isFavourite = favourite;
@@ -117,7 +125,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
     return Scaffold(
       backgroundColor: Colors.white,
       body: Padding(
-          padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+          padding:
+              const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
           child: Column(
             children: [
               Expanded(
@@ -154,7 +163,9 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
                 children: [
                   buildAddToCalendarButton(context),
                   const SizedBox(width: 20),
-                  !areAttendeeDetailsLoading ? buildRegisterButton(context) : const CircularProgressIndicator()
+                  !areAttendeeDetailsLoading
+                      ? buildRegisterButton(context)
+                      : const CircularProgressIndicator()
                 ],
               ),
             ],
@@ -189,14 +200,18 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
               });
               if (isFavourite) {
                 VolunteeringEventFavourite volunteeringEventFavourite =
-                    VolunteeringEventFavourite(userId: FirebaseAuth.instance.currentUser!.uid, eventId: widget.volunteeringEvent.reference.id);
-                VolunteeringEventFavouritesDAO.addVolunteeringEventFavourite(volunteeringEventFavourite);
+                    VolunteeringEventFavourite(
+                        userId: FirebaseAuth.instance.currentUser!.uid,
+                        eventId: widget.volunteeringEvent.reference.id);
+                VolunteeringEventFavouritesDAO.addVolunteeringEventFavourite(
+                    volunteeringEventFavourite);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Text('Added to favourites successfully'),
                 ));
               } else {
                 VolunteeringEventFavouritesDAO.removeVolunteeringEventFavourite(
-                    FirebaseAuth.instance.currentUser!.uid, widget.volunteeringEvent.reference.id);
+                    FirebaseAuth.instance.currentUser!.uid,
+                    widget.volunteeringEvent.reference.id);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Text('Removed from favourites successfully'),
                 ));
@@ -206,8 +221,10 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
               });
             },
             icon: isFavourite
-                ? const FaIcon(FontAwesomeIcons.solidHeart, color: Colors.red, size: 30)
-                : const FaIcon(FontAwesomeIcons.heart, color: Colors.red, size: 30), // todo click to favourite
+                ? const FaIcon(FontAwesomeIcons.solidHeart,
+                    color: Colors.red, size: 30)
+                : const FaIcon(FontAwesomeIcons.heart,
+                    color: Colors.red, size: 30), // todo click to favourite
           );
   }
 
@@ -237,7 +254,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
         Icon(Icons.calendar_month, color: Colors.grey.shade500, size: 20),
         const SizedBox(width: 21),
         Text(
-          DateFormat('EEEE, d\'th\' MMMM yyyy').format(widget.volunteeringEvent.date),
+          DateFormat('EEEE, d\'th\' MMMM yyyy')
+              .format(widget.volunteeringEvent.date),
           style: TextStyle(
             fontWeight: FontWeight.normal,
             color: Colors.grey.shade800,
@@ -273,7 +291,7 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
                 ),
               ),
               Text(
-                _organiserDetails.forename + " " + _organiserDetails.surname,
+                _organiserDetails.name,
                 style: TextStyle(
                   fontWeight: FontWeight.normal,
                   color: Colors.grey.shade800,
@@ -310,7 +328,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
     return areAttendeeDetailsLoading // todo this doesnt overlap
         ? const CircularProgressIndicator()
         : Row(children: [
-            for (int i = 0; i < _attendees.length && i < 4; i++) buildProfilePhoto(_attendees[i].profilePhotoUrl, index: i),
+            for (int i = 0; i < _attendees.length && i < 4; i++)
+              buildProfilePhoto(_attendees[i].profilePhotoUrl, index: i),
             if (_attendees.length > 4) ...[
               Text(
                 '  +${_attendees.length - 4}',
@@ -350,7 +369,9 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
-            border: Border.all(color: _selectedIndex == index ? Colors.blue : Colors.transparent),
+            border: Border.all(
+                color:
+                    _selectedIndex == index ? Colors.blue : Colors.transparent),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -382,7 +403,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
     }
     return (widget.volunteeringEvent.organiserContactConsent)
         ? buildContactDetails()
-        : const Text('The organiser has opted out of receiving event-related inquiries.');
+        : const Text(
+            'The organiser has opted out of receiving event-related inquiries.');
   }
 
   Widget buildDescriptionDetails() {
@@ -393,7 +415,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                FaIcon(FontAwesomeIcons.globe, color: Colors.grey.shade500, size: 17),
+                FaIcon(FontAwesomeIcons.globe,
+                    color: Colors.grey.shade500, size: 17),
                 const SizedBox(width: 15),
                 GestureDetector(
                   onTap: () async {
@@ -430,11 +453,14 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
                 padding: EdgeInsets.zero,
                 icon: const Icon(Icons.content_copy, size: 15),
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: widget.volunteeringEvent.location));
+                  Clipboard.setData(
+                      ClipboardData(text: widget.volunteeringEvent.location));
                 },
               ),
             ]),
-            EventLocationMap(eventLocation: new LatLng(widget.volunteeringEvent.latitude, widget.volunteeringEvent.longitude)),
+            EventLocationMap(
+                eventLocation: new LatLng(widget.volunteeringEvent.latitude,
+                    widget.volunteeringEvent.longitude)),
           ])
         : const Text("Online");
   }
@@ -466,7 +492,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
                   child: InkWell(
                     onTap: () {
                       Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => ColleagueProfilePage(UID: _organiserDetails.UID),
+                        builder: (context) =>
+                            ColleagueProfilePage(UID: _organiserDetails.UID),
                       ));
                     },
                     child: ListTile(
@@ -480,7 +507,7 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
                         ),
                       ),
                       title: Text(
-                        _organiserDetails.forename + " " + _organiserDetails.surname,
+                        _organiserDetails.name,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
@@ -516,7 +543,7 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
         ),
         PopupMenuItem<String>(
           value: 'messagePerson',
-          child: Text('Message ' + _organiserDetails.forename),
+          child: Text('Message ${_organiserDetails.name}'),
         ),
       ],
       onSelected: (String value) {
@@ -562,31 +589,39 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
       final String organiserId = _organiserDetails.UID;
       final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-      final chatQuerySnapshot = await FirebaseFirestore.instance.collection('chats').where('users', arrayContains: currentUserId).get();
+      final chatQuerySnapshot = await FirebaseFirestore.instance
+          .collection('chats')
+          .where('users', arrayContains: currentUserId)
+          .get();
 
       final filteredChats = chatQuerySnapshot.docs.where((chatDoc) {
         List<dynamic> users = chatDoc['users'];
         return users.contains(organiserId) && users.length == 2;
       }).toList();
 
-      if (filteredChats.length != 0) {
+      if (filteredChats.isNotEmpty) {
         final chatDoc = filteredChats.first;
 
-        Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-          builder: (_) => ChatroomPage(chat: chatDoc),
-        ),
+        Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
+            builder: (_) => ChatroomPage(chat: chatDoc),
+          ),
         );
         return;
       } else {
-        final String chatName = _organiserDetails.forename + " " + _organiserDetails.surname;
+        final String chatName = _organiserDetails.name;
 
         final List<String> memberIds = [];
         memberIds.add(organiserId);
         memberIds.add(currentUserId);
 
-        final chatRef = await FirebaseFirestore.instance
-            .collection('chats')
-            .add({'chatName': chatName, 'users': memberIds, 'lastMessageTime': DateTime.now(), 'lastMessage': ''});
+        final chatRef =
+            await FirebaseFirestore.instance.collection('chats').add({
+          'chatName': chatName,
+          'users': memberIds,
+          'lastMessageTime': DateTime.now(),
+          'lastMessage': ''
+        });
 
         final usersCollectionRef = chatRef.collection('users');
 
@@ -597,14 +632,17 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
           });
         }
 
-        final chatQuerySnapshot = await FirebaseFirestore.instance.collection('chats').where('users', arrayContains: currentUserId).get();
+        final chatQuerySnapshot = await FirebaseFirestore.instance
+            .collection('chats')
+            .where('users', arrayContains: currentUserId)
+            .get();
 
         final filteredChats = chatQuerySnapshot.docs.where((chatDoc) {
           List<dynamic> users = chatDoc['users'];
           return users.contains(organiserId) && users.length == 2;
         }).toList();
 
-        if (filteredChats.length != 0) {
+        if (filteredChats.isNotEmpty) {
           final chatDoc = filteredChats.first;
 
           Navigator.push(
@@ -618,7 +656,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
     } catch (e) {
       //print('Error while trying to add user to chat: ' + e.toString());
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('There was an error while trying to add you to the chat.'),
+        content:
+            Text('There was an error while trying to add you to the chat.'),
       ));
     }
   }
@@ -628,7 +667,10 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
       final String eventID = widget.volunteeringEvent.reference.id;
       final String userIdToAdd = FirebaseAuth.instance.currentUser!.uid;
 
-      final chatQuerySnapshot = await FirebaseFirestore.instance.collection('chats').where('eventId', isEqualTo: eventID).get();
+      final chatQuerySnapshot = await FirebaseFirestore.instance
+          .collection('chats')
+          .where('eventId', isEqualTo: eventID)
+          .get();
 
       if (chatQuerySnapshot.docs.isNotEmpty) {
         final chatDoc = chatQuerySnapshot.docs.first;
@@ -667,13 +709,15 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('There was an error while trying to add you to the group chat.'),
+          content: Text(
+              'There was an error while trying to add you to the group chat.'),
         ));
       }
     } catch (e) {
       //print('Error while trying to add user to group chat: ' + e.toString());
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('There was an error while trying to add you to the group chat.'),
+        content: Text(
+            'There was an error while trying to add you to the group chat.'),
       ));
     }
   }
@@ -700,28 +744,32 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
           ],
         ),
         child: Center(
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-          TextButton(
-              onPressed: () async {
-                joinGroupChat(context);
-              },
-              child: Container(
-                height: 40,
-                width: 400,
-                alignment: Alignment.center,
-                child: _registrationInProgress
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      )
-                    : const Text("Group chat",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 20,
-                          color: Colors.white,
-                        )),
-              ))
-        ])));
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+              TextButton(
+                  onPressed: () async {
+                    joinGroupChat(context);
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 400,
+                    alignment: Alignment.center,
+                    child: _registrationInProgress
+                        ? const CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          )
+                        : const Text("Group chat",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 20,
+                              color: Colors.white,
+                            )),
+                  ))
+            ])));
   }
 
   Widget buildRegisterButton(BuildContext context) {
@@ -747,28 +795,32 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
               ],
             ),
             child: Center(
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-              TextButton(
-                  onPressed: () async {
-                    registerUser();
-                  },
-                  child: Container(
-                    height: 40,
-                    width: 400,
-                    alignment: Alignment.center,
-                    child: _registrationInProgress
-                        ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : const Text("Sign up",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            )),
-                  ))
-            ])))
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                  TextButton(
+                      onPressed: () async {
+                        registerUser();
+                      },
+                      child: Container(
+                        height: 40,
+                        width: 400,
+                        alignment: Alignment.center,
+                        child: _registrationInProgress
+                            ? const CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              )
+                            : const Text("Sign up",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                )),
+                      ))
+                ])))
         : Container(
             alignment: Alignment.center,
             height: 60,
@@ -790,28 +842,32 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
               ],
             ),
             child: Center(
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-              TextButton(
-                  onPressed: () async {
-                    deregisterUser();
-                  },
-                  child: Container(
-                    height: 40,
-                    width: 400,
-                    alignment: Alignment.center,
-                    child: _registrationInProgress
-                        ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : const Text("Drop out",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            )),
-                  ))
-            ])));
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                  TextButton(
+                      onPressed: () async {
+                        deregisterUser();
+                      },
+                      child: Container(
+                        height: 40,
+                        width: 400,
+                        alignment: Alignment.center,
+                        child: _registrationInProgress
+                            ? const CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              )
+                            : const Text("Drop out",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                )),
+                      ))
+                ])));
   }
 
   Widget buildAddToCalendarButton(BuildContext context) {
@@ -836,22 +892,28 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
           ],
         ),
         child: Center(
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-          TextButton(
-              onPressed: () {
-                addToCalendar();
-              },
-              child: Container(
-                height: 40,
-                width: 400,
-                alignment: Alignment.center,
-                child: _addToCalendarInProgress
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      )
-                    : const FaIcon(FontAwesomeIcons.calendarPlus, color: Colors.white, size: 25), // todo get better icon
-              ))
-        ])));
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+              TextButton(
+                  onPressed: () {
+                    addToCalendar();
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 400,
+                    alignment: Alignment.center,
+                    child: _addToCalendarInProgress
+                        ? const CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          )
+                        : const FaIcon(FontAwesomeIcons.calendarPlus,
+                            color: Colors.white,
+                            size: 25), // todo get better icon
+                  ))
+            ])));
   }
 
   void addToCalendar() {
@@ -883,11 +945,13 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
       _registrationInProgress = true;
     });
     try {
-      VolunteeringEventRegistration volunteeringEventRegistration = VolunteeringEventRegistration(
+      VolunteeringEventRegistration volunteeringEventRegistration =
+          VolunteeringEventRegistration(
         userId: FirebaseAuth.instance.currentUser!.uid,
         eventId: widget.volunteeringEvent.reference.id,
       );
-      VolunteeringEventRegistrationsDAO.addVolunteeringEventRegistration(volunteeringEventRegistration);
+      VolunteeringEventRegistrationsDAO.addVolunteeringEventRegistration(
+          volunteeringEventRegistration);
       setState(() {
         isUserRegistered = true;
       });
@@ -911,7 +975,8 @@ class VolunteeringEventDetailsPageState extends State<VolunteeringEventDetailsPa
     });
     try {
       VolunteeringEventRegistrationsDAO.removeVolunteeringEventRegistration(
-          FirebaseAuth.instance.currentUser!.uid, widget.volunteeringEvent.reference.id);
+          FirebaseAuth.instance.currentUser!.uid,
+          widget.volunteeringEvent.reference.id);
       setState(() {
         isUserRegistered = false;
       });

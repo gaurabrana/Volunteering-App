@@ -1,14 +1,7 @@
-import 'package:HeartOfExperian/Pages/Leaderboard.dart';
-import 'package:HeartOfExperian/Pages/NavBarManager.dart';
-import 'package:HeartOfExperian/Pages/Team.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../ColleagueProfile.dart';
-import '../Feed.dart';
-import '../Profile.dart';
-import '../RecordVolunteering.dart';
-import '../SearchVolunteering.dart';
 
 class UserVolunteeringStatCard extends StatefulWidget {
   final String id;
@@ -68,22 +61,17 @@ class VolunteeringStatCardState extends State<UserVolunteeringStatCard> {
                 borderRadius: BorderRadius.circular(30.0),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(30.0), // Set the same border radius as the Card
+                  borderRadius: BorderRadius.circular(
+                      30.0), // Set the same border radius as the Card
                   onTap: () {
-                    if (!widget.isTeamStat) {
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => ColleagueProfilePage(
-                            UID: widget.id
-                        ),
-                      ));
-                    } else {
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => TeamPage(teamId: widget.id),
-                      ));
-                    }
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) =>
+                          ColleagueProfilePage(UID: widget.id),
+                    ));
                   },
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 5, left: 0, right: 0, bottom: 5),
+                    padding: const EdgeInsets.only(
+                        top: 5, left: 0, right: 0, bottom: 5),
                     child: ListTile(
                       leading: Stack(
                         alignment: Alignment.topRight,
@@ -147,7 +135,9 @@ class VolunteeringStatCardState extends State<UserVolunteeringStatCard> {
                         widget.name,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: widget.isCurrentUser ? Colors.white : Colors.black,
+                          color: widget.isCurrentUser
+                              ? Colors.white
+                              : Colors.black,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
@@ -156,7 +146,9 @@ class VolunteeringStatCardState extends State<UserVolunteeringStatCard> {
                         '${widget.hours} hours',
                         style: TextStyle(
                           fontWeight: FontWeight.normal,
-                          color: widget.isCurrentUser ? Colors.white : Colors.black,
+                          color: widget.isCurrentUser
+                              ? Colors.white
+                              : Colors.black,
                         ),
                       ),
                       trailing: Text(
@@ -164,7 +156,9 @@ class VolunteeringStatCardState extends State<UserVolunteeringStatCard> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          color: widget.isCurrentUser ? Colors.white : Colors.black,
+                          color: widget.isCurrentUser
+                              ? Colors.white
+                              : Colors.black,
                         ),
                       ),
                     ),

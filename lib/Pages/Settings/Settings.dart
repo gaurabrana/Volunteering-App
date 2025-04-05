@@ -1,17 +1,10 @@
-import 'package:HeartOfExperian/Pages/NavBarManager.dart';
 import 'package:HeartOfExperian/Pages/Settings/DeleteAccount.dart';
 import 'package:HeartOfExperian/Pages/Settings/ResetPassword.dart';
-import 'package:HeartOfExperian/Pages/Settings/SwapTeams.dart';
 import 'package:flutter/material.dart';
 
 import '../../DataAccessLayer/FeedbackDAO.dart';
 import '../Authentication/SignIn.dart';
 import '../CustomWidgets/BackButton.dart';
-import '../Feed.dart';
-import '../Leaderboard.dart';
-import '../Profile.dart';
-import '../RecordVolunteering.dart';
-import '../SearchVolunteering.dart';
 import 'EditProfile.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -109,27 +102,7 @@ class SettingsPageState extends State<SettingsPage> {
                     Icon(Icons.chevron_right),
                   ],
                 ),
-              ),
-              TextButton(
-                //todo the padding is messed up
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey.shade600,
-                ),
-                onPressed: () async {
-                  showSwapTeamsDialog(context);
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      'Swap teams  ',
-                      style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
-                    ),
-                    Icon(Icons.chevron_right),
-                  ],
-                ),
-              ),
+              ),              
               TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey.shade600,
@@ -284,15 +257,6 @@ class SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (BuildContext context) {
         return ResetPasswordPopUp();
-      },
-    );
-  }
-
-  void showSwapTeamsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return SwapTeamsPopUp();
       },
     );
   }

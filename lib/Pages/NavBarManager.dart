@@ -175,7 +175,7 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
                     : index == 2
                     ? ''
                     : index == 3
-                    ? 'Search'
+                    ? 'Events'
                     : index == 4
                     ? 'Profile'
                     : '',

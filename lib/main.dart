@@ -77,7 +77,7 @@ class MainApplication extends StatelessWidget {
               logInNavigatorKey: loginNavigationKey,
             ),
             recordVolunteeringPage: RecordVolunteeringPage(),
-            leaderboardPage: LeaderboardPage(isTeamStat: false),
+            leaderboardPage: LeaderboardPage(),
             mainNavigatorKey: mainNavigationKey,
             logInNavigatorKey: loginNavigationKey,
           ),

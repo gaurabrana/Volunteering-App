@@ -8,7 +8,6 @@ import 'ColleagueProfile.dart';
 import 'CustomWidgets/BackButton.dart';
 
 class FollowingPage extends StatefulWidget {
-
   const FollowingPage({Key? key}) : super(key: key);
 
   @override
@@ -27,7 +26,8 @@ class FollowingPageState extends State<FollowingPage> {
 
   Future<void> _fetchUserDetails() async {
     try {
-      List<String> userIds = await FollowingDAO.getAllFollowingsForUser(FirebaseAuth.instance.currentUser!.uid);
+      List<String> userIds = await FollowingDAO.getAllFollowingsForUser(
+          FirebaseAuth.instance.currentUser!.uid);
       List<UserDetails> users = [];
       for (var userId in userIds) {
         var user = await UserDAO.getUserDetails(userId);
@@ -47,11 +47,14 @@ class FollowingPageState extends State<FollowingPage> {
     return Scaffold(
         backgroundColor: Colors.white,
         body: Padding(
-            padding: const EdgeInsets.only(top: 40.0, left: 20, right: 20, bottom: 20),
+            padding: const EdgeInsets.only(
+                top: 40.0, left: 20, right: 20, bottom: 20),
             child: Column(children: [
               buildTeamNameTitleAndBackButton(context),
               Expanded(
-                child: areUserDetailsLoading ? const Center(child: CircularProgressIndicator()) : buildUsersList(context, _users),
+                child: areUserDetailsLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : buildUsersList(context, _users),
               ),
             ])));
   }
@@ -84,7 +87,7 @@ class FollowingPageState extends State<FollowingPage> {
           leading: CircleAvatar(
             backgroundImage: NetworkImage(user.profilePhotoUrl),
           ),
-          title: Text(user.forename + " " + user.surname),
+          title: Text(user.name),
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => ColleagueProfilePage(UID: user.UID),

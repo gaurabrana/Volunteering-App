@@ -6,17 +6,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'ColleagueProfile.dart';
 import 'CustomWidgets/VolunteeringStatCard.dart';
-import 'Feed.dart';
-import 'NavBarManager.dart';
-import 'Profile.dart';
-import 'RecordVolunteering.dart';
-import 'SearchVolunteering.dart';
-import 'Team.dart';
 
 class LeaderboardPage extends StatefulWidget {
-  final bool isTeamStat;
-
-  const LeaderboardPage({Key? key, required this.isTeamStat}) : super(key: key);
+  const LeaderboardPage({Key? key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => LeaderboardPageState();
@@ -24,22 +16,18 @@ class LeaderboardPage extends StatefulWidget {
 
 class LeaderboardPageState extends State<LeaderboardPage> {
   late List<LeaderboardStatistic> individualLeaderboardStatistics;
-  late List<LeaderboardStatistic> teamLeaderboardStatistics;
   bool areLeaderboardStatisticsLoading = true;
   DateTime startDate = DateTime(DateTime.now().year - 1);
   DateTime endDate = DateTime.now();
-  late bool isTeamStats;
   int timeframeIndex = 0;
   int volunteeringTypesIndex = 0;
   List<String> timeFrames = ["Year", "Month", "All time"];
-  List<String> volunteeringTypes = VolunteeringHistoryDAO.volunteeringTypesWithOther;
+  List<String> volunteeringTypes =
+      VolunteeringHistoryDAO.volunteeringTypesWithOther;
 
   @override
   void initState() {
     super.initState();
-    setState(() {
-      isTeamStats = widget.isTeamStat;
-    });
     fetchData();
   }
 
@@ -48,7 +36,6 @@ class LeaderboardPageState extends State<LeaderboardPage> {
       volunteeringTypes[0] = "Any";
       areLeaderboardStatisticsLoading = true;
       individualLeaderboardStatistics = [];
-      teamLeaderboardStatistics = [];
       setStartDate();
     });
   }
@@ -79,12 +66,10 @@ class LeaderboardPageState extends State<LeaderboardPage> {
     initialiseData();
     try {
       List<LeaderboardStatistic> individualStats =
-          await VolunteeringHistoryDAO.getLeaderboardStatistics(startDate, endDate, volunteeringTypes[volunteeringTypesIndex]);
-      List<LeaderboardStatistic> teamStats =
-          await VolunteeringHistoryDAO.getTeamLeaderboardStatistics(startDate, endDate, volunteeringTypes[volunteeringTypesIndex]);
+          await VolunteeringHistoryDAO.getLeaderboardStatistics(
+              startDate, endDate, volunteeringTypes[volunteeringTypesIndex]);
       setState(() {
         individualLeaderboardStatistics = individualStats;
-        teamLeaderboardStatistics = teamStats;
         areLeaderboardStatisticsLoading = false;
       });
     } catch (error) {
@@ -100,24 +85,26 @@ class LeaderboardPageState extends State<LeaderboardPage> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+            padding:
+                const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
             child: Column(
               children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  const SizedBox(width: 40),
-                  const Text(
-                    'Leaderboard',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                      decorationColor: Colors.black,
-                    ),
-                  ),
-                  buildFilterButton(context),
-                ]),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 40),
+                      const Text(
+                        'Leaderboard',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30,
+                          decorationColor: Colors.black,
+                        ),
+                      ),
+                      buildFilterButton(context),
+                    ]),
                 const SizedBox(height: 10),
-                _buildLeaderboardToggle(context, Colors.grey[200]!),
                 const SizedBox(height: 15),
                 areLeaderboardStatisticsLoading
                     ? const CircularProgressIndicator()
@@ -127,32 +114,24 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                     ? const CircularProgressIndicator()
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: !isTeamStats
-                            ? individualLeaderboardStatistics.asMap().entries.where((entry) => entry.key >= 3).map((entry) {
-                                final userData = entry.value;
-                                return UserVolunteeringStatCard(
-                                  id: userData.ID,
-                                  name: userData.name,
-                                  profilePhotoURL: userData.profilePhotoURL,
-                                  hours: userData.numHours,
-                                  rank: userData.rank,
-                                  isTeamStat: isTeamStats,
-                                  isCurrentUser: (FirebaseAuth.instance.currentUser?.uid == userData.ID),
-                                );
-                              }).toList()
-                            : teamLeaderboardStatistics.asMap().entries.where((entry) => entry.key >= 3).map((entry) {
-                                final teamData = entry.value;
-                                return UserVolunteeringStatCard(
-                                  id: teamData.ID,
-                                  name: teamData.name,
-                                  profilePhotoURL: teamData.profilePhotoURL,
-                                  hours: teamData.numHours,
-                                  rank: teamData.rank,
-                                  isTeamStat: isTeamStats,
-                                  isCurrentUser: (FirebaseAuth.instance.currentUser?.uid == teamData.ID),
-                                );
-                              }).toList(),
-                      ),
+                        children: individualLeaderboardStatistics
+                            .asMap()
+                            .entries
+                            .where((entry) => entry.key >= 3)
+                            .map((entry) {
+                          final userData = entry.value;
+                          return UserVolunteeringStatCard(
+                            id: userData.ID,
+                            name: userData.name,
+                            profilePhotoURL: userData.profilePhotoURL,
+                            hours: userData.numHours,
+                            rank: userData.rank,
+                            isTeamStat: false,
+                            isCurrentUser:
+                                (FirebaseAuth.instance.currentUser?.uid ==
+                                    userData.ID),
+                          );
+                        }).toList()),
               ],
             ),
           ),
@@ -162,8 +141,10 @@ class LeaderboardPageState extends State<LeaderboardPage> {
   Widget _buildTopThreeUsers() {
     List<Widget> topThreeWidgets = [];
 
-    for (int i in [2, 0, 1]) {
-      final LeaderboardStatistic statisticData = isTeamStats ? teamLeaderboardStatistics[i] : individualLeaderboardStatistics[i];
+    // add 2 later
+    for (int i in [0, 1]) {
+      final LeaderboardStatistic statisticData =
+          individualLeaderboardStatistics[i];
 
       Color crownColor;
       switch (i) {
@@ -190,18 +171,10 @@ class LeaderboardPageState extends State<LeaderboardPage> {
               children: [
                 InkWell(
                   onTap: () {
-                    if (isTeamStats) {
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => TeamPage(
-                          teamId: statisticData.ID,
-                        ),
-                      ));
-                    } else {
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => ColleagueProfilePage(
-                            UID: statisticData.ID),
-                      ));
-                    }
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) =>
+                          ColleagueProfilePage(UID: statisticData.ID),
+                    ));
                   },
                   child: CircleAvatar(
                     radius: (i == 0) ? 50 : 40,
@@ -209,7 +182,8 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                     child: CircleAvatar(
                       radius: (i == 0) ? 45 : 35,
                       backgroundColor: Colors.white,
-                      backgroundImage: NetworkImage(statisticData.profilePhotoURL),
+                      backgroundImage:
+                          NetworkImage(statisticData.profilePhotoURL),
                     ),
                   ),
                 ),
@@ -254,79 +228,6 @@ class LeaderboardPageState extends State<LeaderboardPage> {
     );
   }
 
-  Widget _buildLeaderboardToggle(BuildContext context, Color backgroundColor) {
-    return Container(
-      height: 35,
-      width: 250,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: backgroundColor,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  isTeamStats = !isTeamStats;
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: isTeamStats
-                      ? const LinearGradient(
-                          colors: [Color(0xFF4136F1), Color(0xFF8643FF)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        )
-                      : null,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: Text(
-                    'Team',
-                    style: TextStyle(
-                      color: !isTeamStats ? Colors.grey[700] : Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  isTeamStats = !isTeamStats;
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: !isTeamStats
-                      ? const LinearGradient(
-                          colors: [Color(0xFF4136F1), Color(0xFF8643FF)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        )
-                      : null,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: Text(
-                    'Individual',
-                    style: TextStyle(
-                      color: isTeamStats ? Colors.grey[700] : Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
   Widget buildFilterButton(BuildContext context) {
     return Align(
       alignment: Alignment.centerRight,
@@ -355,7 +256,8 @@ class LeaderboardPageState extends State<LeaderboardPage> {
             onPressed: () {
               _showFilterPopup(context);
             },
-            icon: const FaIcon(FontAwesomeIcons.sliders, color: Colors.white, size: 25), //todo adjust thickness
+            icon: const FaIcon(FontAwesomeIcons.sliders,
+                color: Colors.white, size: 25), //todo adjust thickness
             color: Color(0xFF4136F1),
           ),
         ),
@@ -376,29 +278,42 @@ class LeaderboardPageState extends State<LeaderboardPage> {
           });
         },
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
             return Colors.white;
           }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
+          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+              (Set<MaterialState> states) {
             return timeframeIndex == i
-                ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600); // Set the text color and style based on selection
+                ? const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)
+                : TextStyle(
+                    color: Colors.grey
+                        .shade600); // Set the text color and style based on selection
           }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
+          side: MaterialStateProperty.resolveWith<BorderSide>(
+              (Set<MaterialState> states) {
             return timeframeIndex == i
                 ? const BorderSide(color: Colors.purple, width: 2.0)
-                : const BorderSide(color: Colors.grey, width: 1.0); // Set the border color and width based on selection
+                : const BorderSide(
+                    color: Colors.grey,
+                    width:
+                        1.0); // Set the border color and width based on selection
           }),
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0), // Set the border radius
+              borderRadius:
+                  BorderRadius.circular(20.0), // Set the border radius
             ),
           ),
         ),
         child: Text(
           timeFrames[i],
           style: timeframeIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
+              ? const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins')
               : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
         ),
       ));
@@ -414,29 +329,42 @@ class LeaderboardPageState extends State<LeaderboardPage> {
           });
         },
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
             return Colors.white;
           }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
+          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+              (Set<MaterialState> states) {
             return volunteeringTypesIndex == i
-                ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600); // Set the text color and style based on selection
+                ? const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)
+                : TextStyle(
+                    color: Colors.grey
+                        .shade600); // Set the text color and style based on selection
           }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
+          side: MaterialStateProperty.resolveWith<BorderSide>(
+              (Set<MaterialState> states) {
             return volunteeringTypesIndex == i
                 ? const BorderSide(color: Colors.purple, width: 2.0)
-                : const BorderSide(color: Colors.grey, width: 1.0); // Set the border color and width based on selection
+                : const BorderSide(
+                    color: Colors.grey,
+                    width:
+                        1.0); // Set the border color and width based on selection
           }),
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0), // Set the border radius
+              borderRadius:
+                  BorderRadius.circular(20.0), // Set the border radius
             ),
           ),
         ),
         child: Text(
           volunteeringTypes[i],
           style: volunteeringTypesIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
+              ? const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins')
               : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
         ),
       ));
@@ -456,40 +384,42 @@ class LeaderboardPageState extends State<LeaderboardPage> {
               decorationColor: Colors.black,
             ),
           ),
-          content: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            _buildLeaderboardToggle(context, Colors.white),
-            SizedBox(height: 15),
-            const Text(
-              'Timeframe',
-              textAlign: TextAlign.left,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-                decorationColor: Colors.black,
-              ),
-            ),
-            SizedBox(height: 10),
-            Wrap(
-              spacing: 10.0, // spacing between buttons
-              runSpacing: 2.0, // spacing between rows
-              children: timeframeButtons,
-            ),
-            const Text(
-              'Types',
-              textAlign: TextAlign.left,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-                decorationColor: Colors.black,
-              ),
-            ),
-            SizedBox(height: 10),
-            Wrap(
-              spacing: 10.0, // spacing between buttons
-              runSpacing: 2.0, // spacing between rows
-              children: volunteeringTypeButtons,
-            )
-          ]),
+          content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 15),
+                const Text(
+                  'Timeframe',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    decorationColor: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Wrap(
+                  spacing: 10.0, // spacing between buttons
+                  runSpacing: 2.0, // spacing between rows
+                  children: timeframeButtons,
+                ),
+                const Text(
+                  'Types',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    decorationColor: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Wrap(
+                  spacing: 10.0, // spacing between buttons
+                  runSpacing: 2.0, // spacing between rows
+                  children: volunteeringTypeButtons,
+                )
+              ]),
           actions: <Widget>[
             Container(
                 alignment: Alignment.center,
@@ -512,24 +442,27 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                   ],
                 ),
                 child: Center(
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                  TextButton(
-                      onPressed: () async {
-                        Navigator.of(context).pop();
-                      },
-                      child: Container(
-                        height: 40,
-                        width: 310,
-                        alignment: Alignment.center,
-                        child: const Text("Save",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            )), // todo could i have a cool animation here
-                      )),
-                ])))
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                      TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            height: 40,
+                            width: 310,
+                            alignment: Alignment.center,
+                            child: const Text("Save",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                )), // todo could i have a cool animation here
+                          )),
+                    ])))
           ],
         );
       },

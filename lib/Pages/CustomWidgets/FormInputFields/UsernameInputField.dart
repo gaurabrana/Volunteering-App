@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 
-class SurnameInputField extends StatefulWidget {
+class UserNameInputField extends StatefulWidget {
   final TextEditingController controller;
 
-  const SurnameInputField({
-    super.key,
-    required this.controller,
-  });
+  const UserNameInputField({super.key, required this.controller});
 
   @override
-  State<StatefulWidget> createState() => SurnameInputFieldState();
+  State<StatefulWidget> createState() => UserNameInputFieldState();
 }
 
-class SurnameInputFieldState extends State<SurnameInputField> {
+class UserNameInputFieldState extends State<UserNameInputField> {
   @override
   Widget build(context) {
     return Container(
-      width: 172,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -35,7 +31,7 @@ class SurnameInputFieldState extends State<SurnameInputField> {
           textCapitalization: TextCapitalization.words,
           keyboardType: TextInputType.name,
           decoration: InputDecoration(
-            hintText: 'Surname',
+            hintText: 'Name',
             hintStyle: TextStyle(
               color: Colors.grey,
             ),

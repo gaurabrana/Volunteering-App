@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:HeartOfExperian/Models/UserDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInSharedPreferences {
@@ -9,5 +12,31 @@ class SignInSharedPreferences {
   static Future<void> setSignedIn(bool value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isSignedIn', value);
+  }
+
+  /// Save user details to SharedPreferences
+  static Future<void> setCurrentUserDetails(UserDetails details) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String jsonString = jsonEncode(details.toJson());
+    await prefs.setString('userDetails', jsonString);
+  }
+
+  /// Get user details from SharedPreferences
+  static Future<UserDetails?> getCurrentUserDetails() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString('userDetails');
+
+    if (jsonString != null) {
+      final Map<String, dynamic> map = jsonDecode(jsonString);
+      return UserDetails.fromJson(map);
+    }
+
+    return null;
+  }
+
+  /// Clear stored user details on logout
+  static Future<void> clearCurrentUserDetails() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('userDetails');
   }
 }
