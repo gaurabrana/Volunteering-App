@@ -1,10 +1,14 @@
+import 'package:HeartOfExperian/DataAccessLayer/VolunteeringCauseDAO.dart';
+import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventDAO.dart';
 import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:flutter/material.dart';
 
 import '../Models/UserDetails.dart';
+import '../Models/VolunteeringEvent.dart';
 import 'CreateVolunteeringEvent.dart';
 import 'Messages.dart';
 import 'Settings/SharedPreferences.dart';
+import 'VolunteeringEventDetails.dart';
 import 'common_helper.dart';
 
 class Homepage extends StatefulWidget {
@@ -300,7 +304,142 @@ class HomepageState extends State<Homepage> {
         ));
   }
 
-  buildVolunteerDashboard() {}
+  buildVolunteerDashboard() {
+    return FutureBuilder<List<VolunteeringEvent>?>(
+      future: VolunteeringEventDAO.getAllFutureVolunteeringEvents(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // While loading, show a loading indicator
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          // If there was an error fetching events
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (snapshot.hasData && snapshot.data != null) {
+          // If data is available, show the events
+          List<VolunteeringEvent> events = snapshot.data!;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: const Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 30,
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              // Active Events
+              buildSectionTitle('Active Events'),
+              buildEventList(events),
+
+              SizedBox(height: 20),
+
+              // Explore More Events (or Apply)
+              buildSectionTitle('Explore More Events'),
+              buildEventList(
+                  events), // You can use the same event list for exploration
+            ],
+          );
+        } else {
+          // Handle empty data
+          return Center(child: Text('No events available.'));
+        }
+      },
+    );
+  }
+
+  // Helper method to display events in a list
+  Widget buildEventList(List<VolunteeringEvent> events) {
+    return Column(
+      children: events.map((event) {
+        return GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) =>
+                    VolunteeringEventDetailsPage(volunteeringEvent: event),
+              ));
+            },
+            child: buildEventCard(event));
+      }).toList(),
+    );
+  }
+
+  // Helper method to build section titles
+  Widget buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build each event card
+  // Helper method to build each event card
+  Widget buildEventCard(VolunteeringEvent event) {
+    return Card(
+      elevation: 4,
+      margin: EdgeInsets.only(bottom: 15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.event,
+              color: Colors.blue,
+              size: 40,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "${event.date.toLocal().toString().split(' ')[0]} at ${event.location}",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    event.description,
+                    style: TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                // Implement the event interaction (e.g., apply, learn more)
+              },
+              child: Text('Join'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   redirectToAnotherPage(int indexToNavigate) {
     CommonHelper.redirectToAnotherPage(
