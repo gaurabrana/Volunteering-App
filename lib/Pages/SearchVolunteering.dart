@@ -24,7 +24,6 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
   TextEditingController _searchController = TextEditingController();
   List<String> volunteeringTypes =
       VolunteeringHistoryDAO.volunteeringTypesWithAny;
-  List<String> deliveryTypes = ['Any', 'Online', 'In person'];
   int volunteeringTypesIndex = 0;
   int deliveryTypeIndex = 0;
 
@@ -33,7 +32,6 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
   String _selectedLocation = '';
   DateTime _selectedStartDate = DateTime.now();
   DateTime _selectedEndDate = DateTime.now().add(Duration(days: 2191));
-  String _selectedDeliveryFormat = 'Any';
   UserRole? userRole;
 
   @override
@@ -246,58 +244,6 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
         ),
       ));
     }
-    ;
-
-    for (int i = 0; i < deliveryTypes.length; i++) {
-      deliveryTypeButtons.add(TextButton(
-        onPressed: () {
-          setState(() {
-            deliveryTypeIndex = i; // todo allow to select > 1
-            _selectedDeliveryFormat = deliveryTypes[i];
-          });
-        },
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>(
-              (Set<MaterialState> states) {
-            return Colors.white;
-          }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-              (Set<MaterialState> states) {
-            return deliveryTypeIndex == i
-                ? const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(
-                    color: Colors.grey
-                        .shade600); // Set the text color and style based on selection
-          }),
-          side: MaterialStateProperty.resolveWith<BorderSide>(
-              (Set<MaterialState> states) {
-            return deliveryTypeIndex == i
-                ? const BorderSide(color: Colors.purple, width: 2.0)
-                : const BorderSide(
-                    color: Colors.grey,
-                    width:
-                        1.0); // Set the border color and width based on selection
-          }),
-          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-            RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(20.0), // Set the border radius
-            ),
-          ),
-        ),
-        child: Text(
-          deliveryTypes[i],
-          style: deliveryTypeIndex == i
-              ? const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Poppins')
-              : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
-        ),
-      ));
-    }
-    ;
 
     showDialog(
       context: context,
@@ -332,16 +278,6 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
                     children: volunteeringTypeButtons,
                   ),
                   SizedBox(height: 10),
-                  const Text(
-                    'Delivery type',
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      decorationColor: Colors.black,
-                    ),
-                  ),
-                  SizedBox(height: 10),
                   Wrap(
                     spacing: 10.0, // spacing between buttons
                     runSpacing: 2.0, // spacing between rows
@@ -361,7 +297,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
                   TextField(
                     onChanged: (value) {
                       setState(() {
-                        _selectedLocation = value;
+                        _selectedLocation = value.trim();
                       });
                     },
                     keyboardType: TextInputType.name,
@@ -578,11 +514,6 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
     List<VolunteeringEvent> filteredList = _volunteeringEvents.where((event) {
       bool matchesQuery =
           event.name.toLowerCase().contains(query.toLowerCase());
-
-      bool matchesDeliveryType = _selectedDeliveryFormat == 'Any' ||
-          (event.online && _selectedDeliveryFormat == 'Online') ||
-          (!event.online && _selectedDeliveryFormat == 'In person');
-
       bool matchesType = _selectedType == 'Any' || event.type == _selectedType;
 
       bool matchesLocation = _selectedLocation.isEmpty ||
@@ -595,11 +526,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
           (event.date.isAfter(_selectedStartDate!) &&
               event.date.isBefore(_selectedEndDate!));
 
-      return matchesQuery &&
-          matchesType &&
-          matchesLocation &&
-          matchesDateRange &&
-          matchesDeliveryType;
+      return matchesQuery && matchesType && matchesLocation && matchesDateRange;
     }).toList();
 
     setState(() {

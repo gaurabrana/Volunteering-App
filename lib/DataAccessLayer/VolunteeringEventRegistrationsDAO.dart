@@ -105,7 +105,7 @@ class VolunteeringEventRegistrationsDAO {
         return VolunteeringEventRegistration(
           userId: doc['userId'],
           eventId: doc['eventId'],
-          isAssigned: doc['isAssigned'] ?? false,
+          isAssigned: data.containsKey('isAssigned') ? doc['isAssigned'] ?? false : null,
           assignedStartDate: data.containsKey('assignedStartDate') &&
                   data['assignedStartDate'] != null
               ? (data['assignedStartDate'] as Timestamp).toDate()
