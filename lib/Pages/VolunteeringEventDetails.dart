@@ -308,7 +308,7 @@ class VolunteeringEventDetailsPageState
         ? null
         : attendeesList.firstWhereOrNull(
             (element) =>
-                element.userId == FirebaseAuth.instance.currentUser!.uid,
+                element.userId == FirebaseAuth.instance.currentUser!.uid && element.isAssigned,
           );
 
     return !areOrganiserDetailsLoading
