@@ -551,7 +551,7 @@ class _CreateVolunteeringEventFormState
         content: Text('Volunteering event created successfully'),
       ));
       Navigator.pop(context);
-      widget.callbackOnCreateSuccess(3);
+      widget.callbackOnCreateSuccess(2);
     } catch (e) {
       print(e);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

@@ -304,7 +304,7 @@ class VolunteeringEventDetailsPageState
   }
 
   Widget buildAttendeesList() {
-    VolunteeringEventRegistration? info = attendeesList.isNotEmpty
+    VolunteeringEventRegistration? info = attendeesList.isEmpty
         ? null
         : attendeesList.firstWhereOrNull(
             (element) =>
@@ -317,7 +317,7 @@ class VolunteeringEventDetailsPageState
             children: [
               // if assigned show details
               // role, start and end
-              if (info != null && isCurrentUserOrganiser)
+              if (info != null && !isCurrentUserOrganiser)
                 Row(
                   children: [
                     Icon(Icons.assignment_turned_in_outlined),
