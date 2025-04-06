@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rive/rive.dart';
 
-import 'Feed.dart';
+
 import 'Leaderboard.dart';
 import 'Profile.dart';
 import 'RecordVolunteering.dart';
