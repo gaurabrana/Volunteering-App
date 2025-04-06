@@ -12,7 +12,6 @@ import 'homepage.dart';
 class NavBarManager extends StatefulWidget {
   final int initialIndex;
   final SearchVolunteeringPage searchVolunteeringPage;
-  final RecordVolunteeringPage recordVolunteeringPage;
   final Homepage feedPage;
   //final ProfilePage profilePage;
   final LeaderboardPage leaderboardPage;
@@ -24,7 +23,6 @@ class NavBarManager extends StatefulWidget {
     Key? key,
     required this.initialIndex,
     required this.searchVolunteeringPage,
-    required this.recordVolunteeringPage,
     required this.feedPage,
     //required this.profilePage,
     required this.leaderboardPage,
@@ -36,7 +34,8 @@ class NavBarManager extends StatefulWidget {
   _NavBarManagerState createState() => _NavBarManagerState();
 }
 
-class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateMixin {
+class _NavBarManagerState extends State<NavBarManager>
+    with TickerProviderStateMixin {
   late List<Widget> _bodies = [];
 
   int currentActiveIndex = 0;
@@ -52,9 +51,11 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
     _bodies = [
       widget.feedPage,
       widget.leaderboardPage,
-      widget.recordVolunteeringPage,
       widget.searchVolunteeringPage,
-      ProfilePage(mainNavigatorKey: widget.mainNavigatorKey, loginNavigatorKey: widget.logInNavigatorKey,)
+      ProfilePage(
+        mainNavigatorKey: widget.mainNavigatorKey,
+        loginNavigatorKey: widget.logInNavigatorKey,
+      )
     ];
   }
 
@@ -76,15 +77,12 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
     //widget.mainNavigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => _bodies[currentActiveIndex]));
   }
 
-
-
   List<SMIInput<bool>?> inputs = [];
   List<Artboard> artboards = [];
 
   List<String> assetPaths = [
     "assets/animations/home_animation.riv",
     "assets/animations/leaderboard_animation.riv",
-    "assets/animations/add_animation.riv",
     "assets/animations/search_animation.riv",
     "assets/animations/profile_animation.riv",
   ];
@@ -94,7 +92,8 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
       final data = await rootBundle.load(path);
       final file = RiveFile.import(data);
       final artboard = file.mainArtboard;
-      final controller = StateMachineController.fromArtboard(artboard, "State Machine 1");
+      final controller =
+          StateMachineController.fromArtboard(artboard, "State Machine 1");
       SMIInput<bool>? input;
       if (controller != null) {
         artboard.addController(controller);
@@ -113,30 +112,30 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
     setState(() {});
   }
 
-  List<double?> iconSizes = [38, 45, 65, 45, 45];
+  List<double?> iconSizes = [38, 45, 45, 45];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      // body: Builder(
-      //   builder: (context) {
-      //     return Navigator(
-      //       key: widget.mainNavigatorKey,
-      //       onGenerateRoute: (settings) {
-      //         return MaterialPageRoute(
-      //           builder: (_) => _bodies[currentActiveIndex],
-      //         );
-      //       },
-      //     );
-      //   },
-      // ),
-      // body: _bodies[currentActiveIndex],
-      body: _bodies[currentActiveIndex],
-      bottomNavigationBar: getBottomNavBar());
+        backgroundColor: Colors.white,
+        // body: Builder(
+        //   builder: (context) {
+        //     return Navigator(
+        //       key: widget.mainNavigatorKey,
+        //       onGenerateRoute: (settings) {
+        //         return MaterialPageRoute(
+        //           builder: (_) => _bodies[currentActiveIndex],
+        //         );
+        //       },
+        //     );
+        //   },
+        // ),
+        // body: _bodies[currentActiveIndex],
+        body: _bodies[currentActiveIndex],
+        bottomNavigationBar: getBottomNavBar());
   }
 
-  Widget getBottomNavBar(){
+  Widget getBottomNavBar() {
     return Container(
       height: 80,
       decoration: BoxDecoration(
@@ -158,7 +157,7 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(
           artboards.length,
-              (index) {
+          (index) {
             return Flexible(
               child: BottomAppBarItem(
                 artboard: artboards[index],
@@ -172,14 +171,12 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
                 label: index == 0
                     ? 'Home'
                     : index == 1
-                    ? 'Rank'
-                    : index == 2
-                    ? ''
-                    : index == 3
-                    ? 'Events'
-                    : index == 4
-                    ? 'Profile'
-                    : '',
+                        ? 'Rank'
+                        : index == 2
+                            ? 'Events'
+                            : index == 3
+                                ? 'Profile'
+                                : '',
               ),
             );
           },
@@ -187,7 +184,6 @@ class _NavBarManagerState extends State<NavBarManager> with TickerProviderStateM
       ),
     );
   }
-
 }
 
 class BottomAppBarItem extends StatelessWidget {
@@ -223,15 +219,20 @@ class BottomAppBarItem extends StatelessWidget {
           height: iconSize,
           child: GestureDetector(
             onTap: onpress,
-            child: artboard == null ? const SizedBox() : Rive(artboard: artboard!),
+            child:
+                artboard == null ? const SizedBox() : Rive(artboard: artboard!),
           ),
         ),
         if (label != "")
           Text(
             label,
             style: TextStyle(
-              fontWeight: currentIndex == tabIndex ? FontWeight.bold : FontWeight.normal,
-              color: currentIndex == tabIndex ? Color(0xFF8643FF) : Color(0xFF8643FF).withOpacity(0.2),
+              fontWeight: currentIndex == tabIndex
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+              color: currentIndex == tabIndex
+                  ? Color(0xFF8643FF)
+                  : Color(0xFF8643FF).withOpacity(0.2),
             ),
           ),
       ],

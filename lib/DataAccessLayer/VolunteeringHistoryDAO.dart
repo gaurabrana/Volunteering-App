@@ -31,31 +31,17 @@ class VolunteeringHistoryDAO {
           .set({
         'hours': volunteeringHistory.hours,
         'minutes': volunteeringHistory.minutes,
-        'type': volunteeringHistory.type,
-        'cause': volunteeringHistory.cause,
+        'role': volunteeringHistory.role,
+        'task': volunteeringHistory.task,
         'date': volunteeringHistory.date,
-        'UID': volunteeringHistory.UID,
+        'userId': volunteeringHistory.userId,
+        'eventId': volunteeringHistory.eventId,
+        'organiserId': volunteeringHistory.organiserId,
+        'eventName': volunteeringHistory.eventName,
+        'userName': volunteeringHistory.userName
       });
-      await addCauseIfNotExists(volunteeringHistory.cause);
     } catch (e) {
-      //print('Error storing volunteering history details: $e');
-    }
-  }
-
-  static Future<void> addCauseIfNotExists(String cause) async {
-    final CollectionReference collection =
-        FirebaseFirestore.instance.collection('volunteeringCauses');
-
-    final QuerySnapshot snapshot =
-        await collection.where('name', isEqualTo: cause).get();
-
-    if (snapshot.docs.isEmpty) {
-      await FirebaseFirestore.instance
-          .collection('volunteeringCauses')
-          .doc()
-          .set({
-        'name': cause,
-      });
+      print('Error storing volunteering history details: $e');
     }
   }
 
@@ -249,5 +235,47 @@ class VolunteeringHistoryDAO {
     }
 
     return leaderboardStatistics;
+  }
+
+  static Future<List<VolunteeringHistory>> getHistoryByEvent(
+      String eventId) async {
+    try {
+      // Get the collection for volunteering history
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('volunteeringHistory')
+          .where('eventId', isEqualTo: eventId)
+          .get();
+
+      // Map the snapshot to a list of VolunteeringHistory objects
+      List<VolunteeringHistory> historyList = querySnapshot.docs
+          .map((doc) => VolunteeringHistory.fromSnapshot(doc))
+          .toList();
+
+      return historyList;
+    } catch (e) {
+      print('Error fetching volunteering history by event: $e');
+      return [];
+    }
+  }
+
+  static Future<List<VolunteeringHistory>> getHistoryByOrganiser(
+      String organiserId) async {
+    try {
+      // Get the collection for volunteering history
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('volunteeringHistory')
+          .where('organiserId', isEqualTo: organiserId)
+          .get();
+
+      // Map the snapshot to a list of VolunteeringHistory objects
+      List<VolunteeringHistory> historyList = querySnapshot.docs
+          .map((doc) => VolunteeringHistory.fromSnapshot(doc))
+          .toList();
+
+      return historyList;
+    } catch (e) {
+      print('Error fetching volunteering history by organiser: $e');
+      return [];
+    }
   }
 }

@@ -12,7 +12,8 @@ class AttendeesPage extends StatefulWidget {
   final List<UserDetails> users;
   final VolunteeringEvent event;
 
-  const AttendeesPage({Key? key, required this.users, required this.event}) : super(key: key);
+  const AttendeesPage({Key? key, required this.users, required this.event})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => AttendeesPageState();
@@ -26,15 +27,17 @@ class AttendeesPageState extends State<AttendeesPage> {
 
   @override
   Widget build(context) {
-    return Padding(
-            padding: const EdgeInsets.only(top: 40.0, left: 20, right: 20, bottom: 20),
-            child: Column(children: [
-              buildTeamNameTitleAndBackButton(context),
-              Expanded(
-                child: buildUsersList(context, widget.users),
-              ),
-              buildJoinGroupChatButton(context),
-            ]));
+    return Scaffold(
+      body: Padding(
+          padding:
+              const EdgeInsets.only(top: 40.0, left: 20, right: 20, bottom: 20),
+          child: Column(children: [
+            buildTeamNameTitleAndBackButton(context),
+            Expanded(
+              child: buildUsersList(context, widget.users),
+            ),
+          ])),
+    );
   }
 
   Widget buildTeamNameTitleAndBackButton(BuildContext context) {
@@ -77,24 +80,27 @@ class AttendeesPageState extends State<AttendeesPage> {
           ],
         ),
         child: Center(
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-          TextButton(
-              onPressed: () async {
-                joinGroupChat(context);
-              },
-              child: Container(
-                height: 40,
-                width: 400,
-                alignment: Alignment.center,
-                child: const Text("Group chat",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                      color: Colors.white,
-                    )),
-              ))
-        ])));
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+              TextButton(
+                  onPressed: () async {
+                    joinGroupChat(context);
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 400,
+                    alignment: Alignment.center,
+                    child: const Text("Group chat",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                          color: Colors.white,
+                        )),
+                  ))
+            ])));
   }
 
   void joinGroupChat(BuildContext context) async {
@@ -102,7 +108,10 @@ class AttendeesPageState extends State<AttendeesPage> {
       final String eventID = widget.event.reference.id;
       final String userIdToAdd = FirebaseAuth.instance.currentUser!.uid;
 
-      final chatQuerySnapshot = await FirebaseFirestore.instance.collection('chats').where('eventId', isEqualTo: eventID).get();
+      final chatQuerySnapshot = await FirebaseFirestore.instance
+          .collection('chats')
+          .where('eventId', isEqualTo: eventID)
+          .get();
 
       if (chatQuerySnapshot.docs.isNotEmpty) {
         final chatDoc = chatQuerySnapshot.docs.first;
@@ -111,9 +120,10 @@ class AttendeesPageState extends State<AttendeesPage> {
 
         final userDoc = await usersCollectionRef.doc(userIdToAdd).get();
         if (userDoc.exists) {
-          Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-            builder: (_) => ChatroomPage(chat: chatDoc),
-          ),
+          Navigator.of(context, rootNavigator: true).push(
+            MaterialPageRoute(
+              builder: (_) => ChatroomPage(chat: chatDoc),
+            ),
           );
           return;
         }
@@ -131,19 +141,22 @@ class AttendeesPageState extends State<AttendeesPage> {
           'users': currentUsers,
         });
 
-        Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-          builder: (_) => ChatroomPage(chat: chatDoc),
-        ),
+        Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
+            builder: (_) => ChatroomPage(chat: chatDoc),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('There was an error while trying to add you to the group chat.'),
+          content: Text(
+              'There was an error while trying to add you to the group chat.'),
         ));
       }
     } catch (e) {
       //print('Error while trying to add user to group chat: ' + e.toString());
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('There was an error while trying to add you to the group chat.'),
+        content: Text(
+            'There was an error while trying to add you to the group chat.'),
       ));
     }
   }

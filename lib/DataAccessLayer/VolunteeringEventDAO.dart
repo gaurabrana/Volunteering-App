@@ -1,14 +1,20 @@
+import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../Models/VolunteeringEvent.dart';
+import '../Models/VolunteeringEventRegistration.dart';
 
 class VolunteeringEventDAO {
   static String defaultVolunteeringPhotoURL =
       "https://firebasestorage.googleapis.com/v0/b/votingsystem-bd00a.appspot.com/o/volunteering_photos%2Fdefault%20volunteering%20photo.png?alt=media&token=0c1e3b70-16cb-4037-a917-b6c594779387";
 
-  static Future<void> addVolunteeringEvent(VolunteeringEvent volunteeringEvent) async {
+  static Future<void> addVolunteeringEvent(
+      VolunteeringEvent volunteeringEvent) async {
     try {
-      await FirebaseFirestore.instance.collection('volunteeringEvents').doc().set({
+      await FirebaseFirestore.instance
+          .collection('volunteeringEvents')
+          .doc()
+          .set({
         'date': volunteeringEvent.date,
         'name': volunteeringEvent.name,
         'description': volunteeringEvent.description,
@@ -29,7 +35,9 @@ class VolunteeringEventDAO {
 
   static Future<VolunteeringEvent?> getVolunteeringEvent(String eventId) async {
     try {
-      final DocumentSnapshot snapshot = await FirebaseFirestore.instance.doc('volunteeringEvents/$eventId').get();
+      final DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .doc('volunteeringEvents/$eventId')
+          .get();
       if (snapshot.exists) {
         return VolunteeringEvent.fromSnapshot(snapshot);
       } else {
@@ -41,14 +49,68 @@ class VolunteeringEventDAO {
     }
   }
 
-  static Future<List<VolunteeringEvent>?> getAllFutureVolunteeringEvents() async {
+  static Future<List<VolunteeringEvent>?>
+      getAllFutureVolunteeringEventsWithStatus(String userId) async {
     try {
-      QuerySnapshot querySnapshot =
-          await FirebaseFirestore.instance.collection('volunteeringEvents').where('date', isGreaterThanOrEqualTo: DateTime.now()).get();
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('volunteeringEvents')
+          .where('date', isGreaterThanOrEqualTo: DateTime.now())
+          .get();
 
-      return querySnapshot.docs.map((doc) => VolunteeringEvent.fromSnapshot(doc)).toList();
+      final List<VolunteeringEvent> updatedEvents = [];
+
+      for (final doc in querySnapshot.docs) {
+        final VolunteeringEvent event = VolunteeringEvent.fromSnapshot(doc);
+
+        final registration =
+            await VolunteeringEventRegistrationsDAO.getUserRegistrationStatus(
+          userId: userId,
+          eventId: doc.id,
+        );
+
+        final eventWithStatus =
+            event.copyWith(currentUserRegistration: registration);
+        updatedEvents.add(eventWithStatus);
+      }
+
+      return updatedEvents;
+    } catch (e) {
+      print(
+          'Error retrieving volunteering events with registration status: $e');
+      return null;
+    }
+  }
+
+  static Future<List<VolunteeringEvent>?>
+      getAllFutureVolunteeringEvents() async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('volunteeringEvents')
+          .where('date', isGreaterThanOrEqualTo: DateTime.now())
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => VolunteeringEvent.fromSnapshot(doc))
+          .toList();
     } catch (e) {
       //print('Error retrieving volunteering events from Firestore: $e');
+      return null;
+    }
+  }
+
+  static Future<List<VolunteeringEvent>?> getEventsByOrganiserUID(
+      String organiserUID) async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('volunteeringEvents')
+          .where('organiserUID', isEqualTo: organiserUID)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => VolunteeringEvent.fromSnapshot(doc))
+          .toList();
+    } catch (e) {
+      print('Error fetching events by organiserUID: $e');
       return null;
     }
   }

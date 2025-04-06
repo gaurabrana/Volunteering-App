@@ -399,7 +399,6 @@ class _LogInFormState extends State<_LogInForm> {
               mainNavigatorKey: widget.mainNavigatorKey,
               logInNavigatorKey: widget.logInNavigatorKey),
           //profilePage: ProfilePage(),
-          recordVolunteeringPage: RecordVolunteeringPage(),
           leaderboardPage: LeaderboardPage(),
           mainNavigatorKey: widget.mainNavigatorKey,
           logInNavigatorKey: widget.logInNavigatorKey,

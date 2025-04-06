@@ -1,4 +1,5 @@
 import 'package:HeartOfExperian/DataAccessLayer/VolunteeringHistoryDAO.dart';
+import 'package:HeartOfExperian/Models/VolunteeringEventRegistration.dart';
 import 'package:HeartOfExperian/Models/VolunteeringHistory.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:confetti/confetti.dart';
@@ -6,9 +7,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../DataAccessLayer/VolunteeringCauseDAO.dart';
+import '../Models/VolunteeringEvent.dart';
 
 class RecordVolunteeringPage extends StatefulWidget {
+  final String userId;
+  final String userName;
+  final String eventId;
+  final VolunteeringEvent event;
+  final VolunteeringEventRegistration registration;
+  const RecordVolunteeringPage(
+      {super.key,
+      required this.userId,
+      required this.eventId,
+      required this.event,
+      required this.registration,
+      required this.userName});
+
   @override
   State<StatefulWidget> createState() => RecordVolunteeringPageState();
 }
@@ -17,75 +31,61 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
   int _hours = 0;
   int _minutes = 0;
   DateTime _date = DateTime.now();
-  List<String> types = VolunteeringHistoryDAO.volunteeringTypesWithOther;
-  int selectedTypeIndex = 0;
   bool _savingInProgress = false;
-  bool _causesLoading = true;
-  late List<String> _causes;
-  late TextEditingController _causesTextController;
-  final GlobalKey<AutoCompleteTextFieldState<String>> _autocompleteFormKey = GlobalKey();
-  String selectedCause = "";
+  final GlobalKey<AutoCompleteTextFieldState<String>> _autocompleteFormKey =
+      GlobalKey();
   bool _durationValid = true;
-  bool _causeValid = true;
+  bool _roleValid = true;
+  bool _taskValid = true;
+
   String _durationErrorMessage = "";
-  String _causeErrorMessage = "";
+  final TextEditingController _roleController = TextEditingController();
+  final TextEditingController _taskController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _causesTextController = TextEditingController(text: selectedCause);
-    _fetchCauses();
   }
 
   void intialiseData() {
     _hours = 0;
     _minutes = 0;
     _date = DateTime.now();
-    selectedTypeIndex = 0;
     _savingInProgress = false;
-    _causesLoading = true;
-    _causes = [];
-    _causesTextController;
-    selectedCause = "";
     _durationValid = true;
-    _causeValid = true;
     _durationErrorMessage = "";
-    _causeErrorMessage = "";
   }
 
   @override
   void dispose() {
-    _causesTextController.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchCauses() async {
-    intialiseData();
-    var causes = await VolunteeringCauseDAO.getAllCauses();
-    setState(() {
-      _causes = causes;
-      _causesLoading = false;
-    });
   }
 
   @override
   Widget build(context) {
-    return Padding(
-        padding: const EdgeInsets.only(top: 50, left: 30, right: 30, bottom: 0),
-        child: SingleChildScrollView(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          buildTitle(context),
-          buildRecordVolunteeringForm(context),
-        ])));
+    return Scaffold(
+      appBar: AppBar(
+        title: buildTitle(context),
+      ),
+      body: Padding(
+          padding:
+              const EdgeInsets.only(top: 10, left: 30, right: 30, bottom: 0),
+          child: SingleChildScrollView(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                buildRecordVolunteeringForm(context),
+              ]))),
+    );
   }
 
   Widget buildTitle(BuildContext context) {
-    return const Text(
+    return Text(
       'Record volunteering',
       textAlign: TextAlign.center,
       style: TextStyle(
         fontWeight: FontWeight.bold,
-        fontSize: 30,
+        fontSize: 24,
         decorationColor: Colors.black,
       ),
     );
@@ -94,6 +94,19 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
   Widget buildRecordVolunteeringForm(BuildContext context) {
     // todo maybe add little 'i' icons which come up with more info on the fields.
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(
+        "Event: ${widget.event.name}",
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      Text(
+        "Volunteer Name: ${widget.userName}",
+        style: TextStyle(
+          fontSize: 16,
+        ),
+      ),
       const SizedBox(height: 20),
       const Text(
         "Duration",
@@ -123,27 +136,22 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
       ),
       buildDatePicker(context),
       const SizedBox(height: 10),
-      const Text(
-        "Type",
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-      const SizedBox(height: 5),
-      buildVolunteeringTypeOptions(context),
-      const SizedBox(height: 15),
-      const Text(
-        "Volunteering cause",
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-      _causesLoading ? const CircularProgressIndicator() : buildVolunteeringCausePicker(context),
-      !_causeValid
+      buildRoleField(),
+      !_roleValid
           ? Text(
-              _causeErrorMessage,
+              "Enter role filled by volunteer",
+              style: TextStyle(
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+                color: Colors.red.shade600,
+              ),
+            )
+          : Container(),
+      const SizedBox(height: 10),
+      buildTaskDoneField(),
+      !_taskValid
+          ? Text(
+              "Enter tasks completed by volunteer",
               style: TextStyle(
                 fontWeight: FontWeight.normal,
                 fontSize: 14,
@@ -168,7 +176,9 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
         decoration: BoxDecoration(
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(20),
-            border: _durationValid ? null : Border.all(color: Colors.red.shade500, width: 2)),
+            border: _durationValid
+                ? null
+                : Border.all(color: Colors.red.shade500, width: 2)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -230,131 +240,36 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    // Ensure that assignedStartDate and assignedEndDate are not null
+    DateTime? startDate = widget.registration?.assignedStartDate;
+    DateTime? endDate = widget.registration?.assignedEndDate;
+
+    // If either startDate or endDate is null, set appropriate bounds.
+    // In this case, use DateTime.now() for null values to prevent errors.
+    DateTime firstDate = startDate ?? DateTime.now();
+    DateTime lastDate = endDate ?? DateTime.now();
+
+    // Show the date picker
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2015, 8),
-      lastDate: DateTime.now(),
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
+
+    // If a valid date is picked, update the state
     setState(() {
-      if (picked != null) _date = picked;
+      if (picked != null) {
+        _date = picked;
+      }
     });
-    //if (picked != null) print({picked.toString()});
+
+    // Uncomment to debug the picked date
+    // if (picked != null) print(picked.toString());
   }
 
-  Widget buildVolunteeringTypeOptions(BuildContext context) {
-    List<Widget> widgets = [];
-
-    for (int i = 0; i < types.length; i++) {
-      widgets.add(TextButton(
-        onPressed: () {
-          setState(() {
-            selectedTypeIndex = i;
-          });
-        },
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-            return Colors.white;
-          }),
-          textStyle: MaterialStateProperty.resolveWith<TextStyle>((Set<MaterialState> states) {
-            return selectedTypeIndex == i
-                ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.grey.shade600); // Set the text color and style based on selection
-          }),
-          side: MaterialStateProperty.resolveWith<BorderSide>((Set<MaterialState> states) {
-            return selectedTypeIndex == i
-                ? const BorderSide(color: Colors.purple, width: 2.0)
-                : const BorderSide(color: Colors.grey, width: 1.0); // Set the border color and width based on selection
-          }),
-          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0), // Set the border radius
-            ),
-          ),
-        ),
-        child: Text(
-          types[i],
-          style: selectedTypeIndex == i
-              ? const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'Poppins')
-              : TextStyle(color: Colors.grey.shade600, fontFamily: 'Poppins'),
-        ),
-      ));
-    }
-    ;
-
-    return Wrap(
-      spacing: 10.0, // spacing between buttons
-      runSpacing: 2.0, // spacing between rows
-      children: widgets,
-    );
-  }
-
-  Widget buildVolunteeringCausePicker(BuildContext context) {
-    AutoCompleteTextField<String>? searchTextField;
-    setState(() {
-      _causesTextController.text = selectedCause;
-    });
-    searchTextField = AutoCompleteTextField<String>(
-      controller: _causesTextController,
-      decoration: InputDecoration(
-        hintText: 'Search',
-        hintStyle: const TextStyle(
-          color: Colors.grey,
-        ),
-        filled: true,
-        border: InputBorder.none,
-        fillColor: Colors.grey.shade100,
-        prefixIcon: const Icon(
-          Icons.search_rounded,
-          color: Colors.grey,
-        ),
-      ),
-      itemFilter: (item, query) {
-        return item.toLowerCase().startsWith(query.toLowerCase());
-      },
-      itemSorter: (a, b) {
-        return a.compareTo(b);
-      },
-      textChanged: (text) {
-        setState(() {
-          selectedCause = text;
-          _causesTextController.text = selectedCause;
-        });
-      },
-      itemSubmitted: (item) {
-        setState(() {
-          _causesTextController.text = item;
-          searchTextField?.controller?.text = item;
-          selectedCause = item;
-        });
-      },
-      itemBuilder: (context, item) {
-        return ListTile(
-          title: Text(item),
-        );
-      },
-      key: _autocompleteFormKey,
-      suggestions: _causes,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          height: 60,
-          padding: const EdgeInsets.all(10),
-          margin: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(20),
-              border: _causeValid ? null : Border.all(color: Colors.red.shade500, width: 2)),
-          child: searchTextField,
-        ),
-      ],
-    );
-  }
-
-  ConfettiController _controllerTop = ConfettiController(duration: const Duration(seconds: 10));
+  ConfettiController _controllerTop =
+      ConfettiController(duration: const Duration(seconds: 10));
 
   Widget buildSaveButton(BuildContext context) {
     return Container(
@@ -385,7 +300,7 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
             TextButton(
               onPressed: () async {
                 validateForm();
-                if (!_durationValid || !_causeValid) {
+                if (!_durationValid) {
                   return;
                 }
                 setState(() {
@@ -394,16 +309,20 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
 
                 try {
                   VolunteeringHistory volunteeringLog = VolunteeringHistory(
-                    hours: _hours,
-                    minutes: _minutes,
-                    date: _date,
-                    type: types[selectedTypeIndex],
-                    cause: selectedCause,
-                    UID: FirebaseAuth.instance.currentUser!.uid,
-                  );
-                  await VolunteeringHistoryDAO.addVolunteeringHistory(volunteeringLog);
-                  _fetchCauses();
+                      hours: _hours,
+                      minutes: _minutes,
+                      date: _date,
+                      role: _roleController.text.trim(),
+                      task: _taskController.text.trim(),
+                      userId: widget.userId,
+                      eventId: widget.eventId,
+                      eventName: widget.event.name,
+                      userName: widget.userName,
+                      organiserId: FirebaseAuth.instance.currentUser!.uid);
+                  await VolunteeringHistoryDAO.addVolunteeringHistory(
+                      volunteeringLog);
                   _controllerTop.play();
+                  resetInfo();
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -422,7 +341,11 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
                               numberOfParticles: 10,
                               gravity: 0.05,
                               shouldLoop: false,
-                              colors: const [Colors.purple, Colors.blue, Colors.pink],
+                              colors: const [
+                                Colors.purple,
+                                Colors.blue,
+                                Colors.pink
+                              ],
                             ),
                             Container(
                               height: 100,
@@ -509,24 +432,98 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
         _durationErrorMessage = "";
       });
     }
-    if (selectedCause.isEmpty) {
-      setState(() {
-        _causeValid = false;
-        _causeErrorMessage = "Please enter a volunteering cause";
-      });
-    } else {
-      setState(() {
-        _causeValid = true;
-        _causeErrorMessage = "";
-      });
-    }
 
-    if (_causeValid && _durationValid) {
-      setState(() {
-        _durationValid = true;
-        _causeValid = true;
-      });
+    if (_roleController.text.trim().isEmpty) {
+      _roleValid = false;
     }
+    if (_taskController.text.trim().isEmpty) {
+      _taskValid = false;
+    }
+    setState(() {});
+  }
+
+// Build UI for the Role TextField
+  Widget buildRoleField() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: TextField(
+        controller: _roleController,
+        decoration: InputDecoration(
+          labelText: 'Role', // The label of the input field
+          hintText: 'Enter the role of the volunteer', // Placeholder text
+          hintStyle: TextStyle(
+            color: Colors.grey,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(25.0)),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+            borderRadius: BorderRadius.circular(25.0),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(25.0),
+            borderSide: BorderSide(
+              color: Colors.red.shade700,
+              width: 2.0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// Build UI for the Task Done TextField
+  Widget buildTaskDoneField() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: TextField(
+        controller: _taskController,
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: 'Task Done', // The label of the input field
+          hintText:
+              'Enter the task the volunteer has completed', // Placeholder text
+          hintStyle: TextStyle(
+            color: Colors.grey,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(25.0)),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade500, width: 2.0),
+            borderRadius: BorderRadius.circular(25.0),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(25.0),
+            borderSide: BorderSide(
+              color: Colors.red.shade700,
+              width: 2.0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void resetInfo() {
+    _hours = 0;
+    _minutes = 0;
+    _date = DateTime.now();
+    _roleController.text = "";
+    _taskController.text = "";
   }
 }
 

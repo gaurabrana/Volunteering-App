@@ -2,12 +2,11 @@ import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventFavouritesDAO.d
 import 'package:HeartOfExperian/Pages/Attendees.dart';
 import 'package:HeartOfExperian/Pages/ColleagueProfile.dart';
 import 'package:HeartOfExperian/Pages/CustomWidgets/EventLocationMap.dart';
-import 'package:add_2_calendar/add_2_calendar.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,15 +17,14 @@ import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
 import '../Models/VolunteeringEventFavourite.dart';
 import '../Models/VolunteeringEventRegistration.dart';
-import 'Chatroom.dart';
+import 'AssignVolunteers.dart';
 import 'CustomWidgets/BackButton.dart';
 
 class VolunteeringEventDetailsPage extends StatefulWidget {
   final VolunteeringEvent volunteeringEvent;
 
   const VolunteeringEventDetailsPage(
-      {Key? key, required this.volunteeringEvent})
-      : super(key: key);
+      {super.key, required this.volunteeringEvent});
 
   @override
   State<StatefulWidget> createState() => VolunteeringEventDetailsPageState();
@@ -39,11 +37,12 @@ class VolunteeringEventDetailsPageState
   late List<UserDetails> _attendees;
   int _selectedIndex = 0;
   bool _registrationInProgress = false;
-  bool _addToCalendarInProgress = false;
   bool areAttendeeDetailsLoading = true;
   late bool isUserRegistered;
   late bool isFavourite;
   bool isFavouriteLoading = true;
+  bool isCurrentUserOrganiser = false;
+  List<VolunteeringEventRegistration> attendeesList = [];
 
   @override
   void initState() {
@@ -63,6 +62,8 @@ class VolunteeringEventDetailsPageState
           await UserDAO.getUserDetails(widget.volunteeringEvent.organiserUID);
       setState(() {
         _organiserDetails = userDetails!;
+        isCurrentUserOrganiser =
+            userDetails.UID == FirebaseAuth.instance.currentUser!.uid;
         areOrganiserDetailsLoading = false;
       });
     } catch (e) {
@@ -73,10 +74,10 @@ class VolunteeringEventDetailsPageState
   Future<void> fetchAttendees() async {
     try {
       List<UserDetails> attendees = [];
-      List<String> attendeeIds =
+      attendeesList =
           await VolunteeringEventRegistrationsDAO.getAllUserIdsForEvent(
               widget.volunteeringEvent.reference.id);
-
+      List<String> attendeeIds = attendeesList.map((e) => e.userId).toList();
       if (attendeeIds.contains(FirebaseAuth.instance.currentUser!.uid)) {
         setState(() {
           isUserRegistered = true;
@@ -161,10 +162,11 @@ class VolunteeringEventDetailsPageState
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  buildAddToCalendarButton(context),
                   const SizedBox(width: 20),
                   !areAttendeeDetailsLoading
-                      ? buildRegisterButton(context)
+                      ? isCurrentUserOrganiser
+                          ? buildOrganiserButton()
+                          : buildRegisterButton(context)
                       : const CircularProgressIndicator()
                 ],
               ),
@@ -302,59 +304,50 @@ class VolunteeringEventDetailsPageState
   }
 
   Widget buildAttendeesList() {
-    // todo get it to overlap.
-    Widget buildProfilePhoto(String photoUrl, {int index = 0}) {
-      return Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 3,
-              blurRadius: 3,
-              offset: const Offset(0, 2),
-            ),
-          ],
-          image: DecorationImage(
-            fit: BoxFit.cover,
-            image: NetworkImage(photoUrl),
-          ),
-        ),
-      );
-    }
+    VolunteeringEventRegistration? info = attendeesList.isNotEmpty
+        ? null
+        : attendeesList.firstWhereOrNull(
+            (element) =>
+                element.userId == FirebaseAuth.instance.currentUser!.uid,
+          );
 
-    return areAttendeeDetailsLoading // todo this doesnt overlap
-        ? const CircularProgressIndicator()
-        : Row(children: [
-            for (int i = 0; i < _attendees.length && i < 4; i++)
-              buildProfilePhoto(_attendees[i].profilePhotoUrl, index: i),
-            if (_attendees.length > 4) ...[
-              Text(
-                '  +${_attendees.length - 4}',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.bold,
+    return !areOrganiserDetailsLoading
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // if assigned show details
+              // role, start and end
+              if (info != null && isCurrentUserOrganiser)
+                Row(
+                  children: [
+                    Icon(Icons.assignment_turned_in_outlined),
+                    buildAssignedInformation(info!),
+                  ],
                 ),
-              ),
+
+              TextButton(
+                child: Row(
+                  children: [
+                    Icon(Icons.group),
+                    SizedBox(
+                      width: 8,
+                    ),
+                    const Text('View all'),
+                  ],
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => AttendeesPage(
+                              users: _attendees,
+                              event: widget.volunteeringEvent,
+                            )),
+                  );
+                },
+              )
             ],
-            TextButton(
-              child: Column(children: [
-                const Text('View all'),
-                const Text('attendees'),
-              ]),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (context) => AttendeesPage(
-                            users: _attendees,
-                            event: widget.volunteeringEvent,
-                          )),
-                );
-              },
-            ),
-          ]);
+          )
+        : SizedBox();
   }
 
   Widget buildTabBar() {
@@ -530,249 +523,16 @@ class VolunteeringEventDetailsPageState
                   ),
                 )),
             SizedBox(width: 10),
-            buildMessagesButton(context),
           ]);
   }
 
-  Widget buildMessagesButton(BuildContext context) {
-    return PopupMenuButton<String>(
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        PopupMenuItem<String>(
-          value: 'joinGroupChat',
-          child: Text('Group Chat'),
-        ),
-        PopupMenuItem<String>(
-          value: 'messagePerson',
-          child: Text('Message ${_organiserDetails.name}'),
-        ),
-      ],
-      onSelected: (String value) {
-        if (value == 'joinGroupChat') {
-          joinGroupChat(context);
-        } else if (value == 'messagePerson') {
-          messagePerson(context);
-        }
-      },
-      child: Container(
-        alignment: Alignment.center,
-        height: 50,
-        width: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 5,
-              blurRadius: 7,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: const Center(
-          child: Icon(
-            Icons.messenger_outline_rounded,
-            color: Colors.white,
-            size: 30,
-          ),
-        ),
-      ),
-    );
-  } //todo when you create event it creates the group chat.
-
-  void messagePerson(BuildContext context) async {
-    try {
-      final String organiserId = _organiserDetails.UID;
-      final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-
-      final chatQuerySnapshot = await FirebaseFirestore.instance
-          .collection('chats')
-          .where('users', arrayContains: currentUserId)
-          .get();
-
-      final filteredChats = chatQuerySnapshot.docs.where((chatDoc) {
-        List<dynamic> users = chatDoc['users'];
-        return users.contains(organiserId) && users.length == 2;
-      }).toList();
-
-      if (filteredChats.isNotEmpty) {
-        final chatDoc = filteredChats.first;
-
-        Navigator.of(context, rootNavigator: true).push(
-          MaterialPageRoute(
-            builder: (_) => ChatroomPage(chat: chatDoc),
-          ),
-        );
-        return;
-      } else {
-        final String chatName = _organiserDetails.name;
-
-        final List<String> memberIds = [];
-        memberIds.add(organiserId);
-        memberIds.add(currentUserId);
-
-        final chatRef =
-            await FirebaseFirestore.instance.collection('chats').add({
-          'chatName': chatName,
-          'users': memberIds,
-          'lastMessageTime': DateTime.now(),
-          'lastMessage': ''
-        });
-
-        final usersCollectionRef = chatRef.collection('users');
-
-        for (final userId in memberIds) {
-          await usersCollectionRef.doc(userId).set({
-            'user': userId,
-            'read': false,
-          });
-        }
-
-        final chatQuerySnapshot = await FirebaseFirestore.instance
-            .collection('chats')
-            .where('users', arrayContains: currentUserId)
-            .get();
-
-        final filteredChats = chatQuerySnapshot.docs.where((chatDoc) {
-          List<dynamic> users = chatDoc['users'];
-          return users.contains(organiserId) && users.length == 2;
-        }).toList();
-
-        if (filteredChats.isNotEmpty) {
-          final chatDoc = filteredChats.first;
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChatroomPage(chat: chatDoc),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      //print('Error while trying to add user to chat: ' + e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-            Text('There was an error while trying to add you to the chat.'),
-      ));
-    }
-  }
-
-  void joinGroupChat(BuildContext context) async {
-    try {
-      final String eventID = widget.volunteeringEvent.reference.id;
-      final String userIdToAdd = FirebaseAuth.instance.currentUser!.uid;
-
-      final chatQuerySnapshot = await FirebaseFirestore.instance
-          .collection('chats')
-          .where('eventId', isEqualTo: eventID)
-          .get();
-
-      if (chatQuerySnapshot.docs.isNotEmpty) {
-        final chatDoc = chatQuerySnapshot.docs.first;
-
-        final usersCollectionRef = chatDoc.reference.collection('users');
-
-        final userDoc = await usersCollectionRef.doc(userIdToAdd).get();
-        if (userDoc.exists) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChatroomPage(chat: chatDoc),
-            ),
-          );
-          return;
-        }
-
-        await usersCollectionRef.doc(userIdToAdd).set({
-          'user': userIdToAdd,
-          'read': false,
-        });
-
-        List<String> currentUsers = List<String>.from(chatDoc['users']);
-
-        currentUsers.add(userIdToAdd);
-
-        await chatDoc.reference.update({
-          'users': currentUsers,
-        });
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatroomPage(chat: chatDoc),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              'There was an error while trying to add you to the group chat.'),
-        ));
-      }
-    } catch (e) {
-      //print('Error while trying to add user to group chat: ' + e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            'There was an error while trying to add you to the group chat.'),
-      ));
-    }
-  }
-
-  Widget buildJoinGroupChatButton(BuildContext context) {
-    return Container(
-        alignment: Alignment.bottomCenter,
-        height: 60,
-        width: 250,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 5,
-              blurRadius: 7,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-              TextButton(
-                  onPressed: () async {
-                    joinGroupChat(context);
-                  },
-                  child: Container(
-                    height: 40,
-                    width: 400,
-                    alignment: Alignment.center,
-                    child: _registrationInProgress
-                        ? const CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : const Text("Group chat",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            )),
-                  ))
-            ])));
-  }
-
   Widget buildRegisterButton(BuildContext context) {
+    bool isAssigned = attendeesList.isNotEmpty
+        ? attendeesList
+            .firstWhere((element) =>
+                element.userId == FirebaseAuth.instance.currentUser!.uid)
+            .isAssigned
+        : false;
     return (!isUserRegistered)
         ? Container(
             alignment: Alignment.center,
@@ -830,7 +590,9 @@ class VolunteeringEventDetailsPageState
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.red.shade400, Colors.red.shade500],
+                colors: isAssigned
+                    ? [Colors.grey.shade400, Colors.blueGrey.shade500]
+                    : [Colors.red.shade400, Colors.red.shade500],
               ),
               boxShadow: [
                 BoxShadow(
@@ -848,6 +610,14 @@ class VolunteeringEventDetailsPageState
                     children: [
                   TextButton(
                       onPressed: () async {
+                        if (isAssigned) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(
+                            content: Text(
+                                'Cannot drop out as you are already assigned to a role'),
+                          ));
+                          return;
+                        }
                         deregisterUser();
                       },
                       child: Container(
@@ -870,76 +640,6 @@ class VolunteeringEventDetailsPageState
                 ])));
   }
 
-  Widget buildAddToCalendarButton(BuildContext context) {
-    return Container(
-        alignment: Alignment.center,
-        height: 60,
-        width: 60,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 5,
-              blurRadius: 7,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-              TextButton(
-                  onPressed: () {
-                    addToCalendar();
-                  },
-                  child: Container(
-                    height: 40,
-                    width: 400,
-                    alignment: Alignment.center,
-                    child: _addToCalendarInProgress
-                        ? const CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : const FaIcon(FontAwesomeIcons.calendarPlus,
-                            color: Colors.white,
-                            size: 25), // todo get better icon
-                  ))
-            ])));
-  }
-
-  void addToCalendar() {
-    setState(() {
-      _addToCalendarInProgress = true;
-    });
-
-    final Event event = Event(
-      title: widget.volunteeringEvent.name,
-      description: widget.volunteeringEvent.description,
-      location: widget.volunteeringEvent.location,
-      allDay: true,
-      startDate: widget.volunteeringEvent.date,
-      endDate: widget.volunteeringEvent.date.add(const Duration(days: 1)),
-      androidParams: const AndroidParams(
-        emailInvites: [], // on Android, you can add invite emails to your event.
-      ),
-    );
-
-    Add2Calendar.addEvent2Cal(event);
-
-    setState(() {
-      _addToCalendarInProgress = false;
-    });
-  }
-
   Future<void> registerUser() async {
     setState(() {
       _registrationInProgress = true;
@@ -947,9 +647,9 @@ class VolunteeringEventDetailsPageState
     try {
       VolunteeringEventRegistration volunteeringEventRegistration =
           VolunteeringEventRegistration(
-        userId: FirebaseAuth.instance.currentUser!.uid,
-        eventId: widget.volunteeringEvent.reference.id,
-      );
+              userId: FirebaseAuth.instance.currentUser!.uid,
+              eventId: widget.volunteeringEvent.reference.id,
+              isAssigned: false);
       VolunteeringEventRegistrationsDAO.addVolunteeringEventRegistration(
           volunteeringEventRegistration);
       setState(() {
@@ -992,6 +692,92 @@ class VolunteeringEventDetailsPageState
     setState(() {
       _registrationInProgress = false;
     });
+  }
+
+  buildOrganiserButton() {
+    return Container(
+        alignment: Alignment.center,
+        height: 60,
+        width: 250,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 5,
+              blurRadius: 7,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Center(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+              TextButton(
+                  onPressed: () async {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) =>
+                          Assignvolunteers(event: widget.volunteeringEvent),
+                    ));
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 400,
+                    alignment: Alignment.center,
+                    child: _registrationInProgress
+                        ? const CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          )
+                        : const Text("Manage",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 20,
+                              color: Colors.white,
+                            )),
+                  ))
+            ])));
+  }
+
+  Widget buildAssignedInformation(VolunteeringEventRegistration info) {
+    DateTime? startDate = info.assignedStartDate;
+    DateTime? endDate = info.assignedEndDate;
+
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Assigned Details:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Start Date: ${startDate != null ? formatDate(startDate) : 'Not Assigned'}',
+            style: TextStyle(fontSize: 14),
+          ),
+          SizedBox(height: 5),
+          Text(
+            'End Date: ${endDate != null ? formatDate(endDate) : 'Not Assigned'}',
+            style: TextStyle(fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String formatDate(DateTime date) {
+    // Format the date as needed (e.g., 'MM/dd/yyyy')
+    return '${date.month}/${date.day}/${date.year}';
   }
 }
 // todo edit details if youre the orgniaser.

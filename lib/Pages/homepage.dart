@@ -1,10 +1,15 @@
+import 'package:HeartOfExperian/DataAccessLayer/UserDAO.dart';
 import 'package:HeartOfExperian/DataAccessLayer/VolunteeringCauseDAO.dart';
 import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventDAO.dart';
+import 'package:HeartOfExperian/DataAccessLayer/VolunteeringHistoryDAO.dart';
+import 'package:HeartOfExperian/Pages/VolunteerAssignAndTrack.dart';
 import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
+import '../Models/VolunteeringHistory.dart';
 import 'CreateVolunteeringEvent.dart';
 import 'Messages.dart';
 import 'Settings/SharedPreferences.dart';
@@ -29,11 +34,11 @@ class HomepageState extends State<Homepage> {
   bool hasUnreadChatsLoading = false;
   UserDetails? _userDetails;
   bool isUserLoading = true;
+  List<VolunteeringHistory> performanceOfVolunteers = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchUserDetails();
     _fetchData();
   }
 
@@ -54,7 +59,18 @@ class HomepageState extends State<Homepage> {
     }
   }
 
-  Future<void> _fetchData() async {}
+  Future<void> _fetchData() async {
+    await _fetchUserDetails();
+    await getPerformanceOfVolunteer();
+  }
+
+  Future<void> getPerformanceOfVolunteer() async {
+    performanceOfVolunteers =
+        await VolunteeringHistoryDAO.getHistoryByOrganiser(_userDetails!.UID);
+
+    // Call setState to update the UI
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +219,9 @@ class HomepageState extends State<Homepage> {
             ElevatedButton(
                 onPressed: () {
                   // Navigate to assignment/scheduling screen
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => VolunteerAssignandTrack(),
+                  ));
                 },
                 child: const Text("Manage Assignments"))
           ],
@@ -223,24 +242,99 @@ class HomepageState extends State<Homepage> {
             const Text("Volunteer Performance",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 10),
-            _buildVolunteerRow("Alex", 20, "Logistics"),
-            _buildVolunteerRow("Sophie", 35, "Outreach"),
+            if (performanceOfVolunteers.isEmpty)
+              Text("Record some logs first to appear here"),
+            ...performanceOfVolunteers.map((e) {
+              // Return the _buildVolunteerRow widget using the user details and volunteer data
+              return _buildVolunteerRow(e);
+            })
           ],
         ),
       ),
     );
   }
 
-  Widget _buildVolunteerRow(String name, int hours, String role) {
+  Widget _buildVolunteerRow(VolunteeringHistory history) {
+    String formattedDate = DateFormat('yyyy-MM-dd').format(history.date);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(name),
-          Text("$hours hrs"),
-          Text(role),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 5,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // User Name and Profile Image
+            Text(
+              history.userName,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            SizedBox(height: 8),
+
+            // Hours and Role
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "${history.hours} hrs ${history.minutes} mins",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                Text(
+                  "Role: ${history.role}",
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+
+            // Event and Task Completed
+            Text(
+              "Worked at: ${history.eventName}",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              "Tasks: ${history.task}",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[700],
+              ),
+            ),
+            SizedBox(height: 8),
+
+            // Date
+            Text(
+              "Date: $formattedDate",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -306,7 +400,8 @@ class HomepageState extends State<Homepage> {
 
   buildVolunteerDashboard() {
     return FutureBuilder<List<VolunteeringEvent>?>(
-      future: VolunteeringEventDAO.getAllFutureVolunteeringEvents(),
+      future: VolunteeringEventDAO.getAllFutureVolunteeringEventsWithStatus(
+          _userDetails?.UID ?? ''),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           // While loading, show a loading indicator
@@ -317,30 +412,46 @@ class HomepageState extends State<Homepage> {
         } else if (snapshot.hasData && snapshot.data != null) {
           // If data is available, show the events
           List<VolunteeringEvent> events = snapshot.data!;
+          // Separate the active events
+          List<VolunteeringEvent> activeEvents = events
+              .where((event) =>
+                  event.currentUserRegistration != null &&
+                  event.currentUserRegistration!.isAssigned)
+              .toList();
+
+          // Separate the applied events (but exclude already active events)
+          List<VolunteeringEvent> appliedEvents = events
+              .where((event) =>
+                  event.currentUserRegistration != null &&
+                  !activeEvents.contains(
+                      event)) // Make sure we don't add already active events
+              .toList();
+
+          // Remaining ones (events that the user has neither applied to nor been assigned to)
+          List<VolunteeringEvent> remainingEvents = events
+              .where((event) =>
+                  event.currentUserRegistration == null ||
+                  !activeEvents.contains(event) &&
+                      !appliedEvents.contains(event))
+              .toList();
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: const Text(
-                  'Dashboard',
+                  'Explore Events',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 30,
+                    fontSize: 24,
                   ),
                 ),
               ),
               SizedBox(height: 20),
               // Active Events
-              buildSectionTitle('Active Events'),
-              buildEventList(events),
-
-              SizedBox(height: 20),
-
-              // Explore More Events (or Apply)
-              buildSectionTitle('Explore More Events'),
-              buildEventList(
-                  events), // You can use the same event list for exploration
+              if (activeEvents.isNotEmpty) buildEventList(activeEvents),
+              if (appliedEvents.isNotEmpty) buildEventList(appliedEvents),
+              if (remainingEvents.isNotEmpty) buildEventList(remainingEvents),
             ],
           );
         } else {
@@ -362,7 +473,7 @@ class HomepageState extends State<Homepage> {
                     VolunteeringEventDetailsPage(volunteeringEvent: event),
               ));
             },
-            child: buildEventCard(event));
+            child: CommonWidget.buildEventCard(event, context));
       }).toList(),
     );
   }
@@ -377,65 +488,6 @@ class HomepageState extends State<Homepage> {
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  // Helper method to build each event card
-  // Helper method to build each event card
-  Widget buildEventCard(VolunteeringEvent event) {
-    return Card(
-      elevation: 4,
-      margin: EdgeInsets.only(bottom: 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(
-              Icons.event,
-              color: Colors.blue,
-              size: 40,
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    event.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "${event.date.toLocal().toString().split(' ')[0]} at ${event.location}",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    event.description,
-                    style: TextStyle(fontSize: 12),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: () {
-                // Implement the event interaction (e.g., apply, learn more)
-              },
-              child: Text('Join'),
-            ),
-          ],
         ),
       ),
     );

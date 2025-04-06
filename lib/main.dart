@@ -1,13 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'Pages/homepage.dart';
 import 'firebase_options.dart'; // Import Firebase Options
 
 import 'Pages/Authentication/SignIn.dart';
-import 'Pages/Feed.dart';
 import 'Pages/Leaderboard.dart';
 import 'Pages/NavBarManager.dart';
-import 'Pages/Profile.dart';
 import 'Pages/RecordVolunteering.dart';
 import 'Pages/SearchVolunteering.dart';
 import 'Pages/Settings/SharedPreferences.dart';
@@ -29,7 +28,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Volunteer Impact',
       debugShowCheckedModeBanner: false,
       navigatorKey: mainNavigationKey,
@@ -77,7 +76,6 @@ class MainApplication extends StatelessWidget {
               mainNavigatorKey: mainNavigationKey,
               logInNavigatorKey: loginNavigationKey,
             ),
-            recordVolunteeringPage: RecordVolunteeringPage(),
             leaderboardPage: LeaderboardPage(),
             mainNavigatorKey: mainNavigationKey,
             logInNavigatorKey: loginNavigationKey,

@@ -37,6 +37,7 @@ dependencies:
   firebase_auth: ^5.4.1
   firebase_dynamic_links: ^6.1.1
   intl: ^0.19.0
+  get: ^4.7.2
   font_awesome_flutter:
   firebase_storage:
   image_picker:
