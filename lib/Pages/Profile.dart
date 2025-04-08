@@ -15,9 +15,9 @@ import '../DataAccessLayer/VolunteeringEventDAO.dart';
 import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
 import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
+import '../Models/VolunteeringEventRegistration.dart';
 import '../Models/VolunteeringHistory.dart';
 import 'CustomWidgets/VolunteeringGraph.dart';
-import 'Following.dart';
 import 'VolunteeringEventDetails.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -95,17 +95,7 @@ class ProfilePageState extends State<ProfilePage> {
     await _fetchProfilePhoto();
     await _fetchHistoricalHours();
     await _fetchAllVolunteeringHistory();
-    await _fetchNumberFollowing();
     await _fetchVolunteeringEvents();
-  }
-
-  Future<void> _fetchNumberFollowing() async {
-    int num = await FollowingDAO.getNumberFollowing(
-        FirebaseAuth.instance.currentUser!.uid);
-    setState(() {
-      following = num;
-      areFollowingLoading = false;
-    });
   }
 
   Future<void> _fetchProfilePhoto() async {
@@ -192,18 +182,26 @@ class ProfilePageState extends State<ProfilePage> {
       List<VolunteeringEvent> upcomingVolunteering = [];
       List<VolunteeringEvent> completedVolunteering = [];
 
-      List<String> allEventIds =
+      List<VolunteeringEventRegistration> allRegistration =
           await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(
               FirebaseAuth.instance.currentUser!.uid);
 
-      for (var eventId in allEventIds) {
-        VolunteeringEvent? event =
-            await VolunteeringEventDAO.getVolunteeringEvent(eventId);
-
-        if (event!.date.isAfter(DateTime.now())) {
-          upcomingVolunteering.add(event);
-        } else {
-          completedVolunteering.add(event);
+      for (var registration in allRegistration) {
+        if (registration.isAssigned) {
+          if (registration.assignedEndDate != null &&
+              registration.assignedEndDate!.isBefore(DateTime.now())) {
+            VolunteeringEvent? event =
+                await VolunteeringEventDAO.getVolunteeringEvent(
+                    registration.eventId);
+            completedVolunteering.add(event!);
+          }
+          if (registration.assignedStartDate != null &&
+              registration.assignedStartDate!.isAfter(DateTime.now())) {
+            VolunteeringEvent? event =
+                await VolunteeringEventDAO.getVolunteeringEvent(
+                    registration.eventId);
+            upcomingVolunteering.add(event!);
+          }
         }
       }
 
@@ -344,34 +342,6 @@ class ProfilePageState extends State<ProfilePage> {
         fontWeight: FontWeight.w700,
         fontSize: 27,
         decorationColor: Colors.black,
-      ),
-    );
-  }
-
-  Widget buildFollowingButton(BuildContext context) {
-    return TextButton(
-      onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => FollowingPage()),
-        );
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Following ',
-            style: TextStyle(fontSize: 16, color: Colors.black),
-          ),
-          areFollowingLoading
-              ? CircularProgressIndicator()
-              : Text(
-                  following.toString(),
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black),
-                ),
-        ],
       ),
     );
   }
@@ -1038,8 +1008,6 @@ class ProfilePageState extends State<ProfilePage> {
 
   List<Widget> buildUserProfile() {
     return [
-      buildFollowingButton(context),
-      const SizedBox(height: 10),
       buildHistoricalHoursSection(context),
       const SizedBox(height: 25),
       buildVolunteeringGraph(context),
