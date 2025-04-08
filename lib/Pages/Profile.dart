@@ -1,23 +1,22 @@
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
-import 'package:HeartOfExperian/Pages/CustomWidgets/VolunteeringTypePieChart.dart';
-import 'package:HeartOfExperian/Pages/Settings/Settings.dart';
-import 'package:HeartOfExperian/Pages/Settings/SharedPreferences.dart';
-import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-import '../DataAccessLayer/FollowingDAO.dart';
 import '../DataAccessLayer/PhotoDAO.dart';
 import '../DataAccessLayer/UserDAO.dart';
 import '../DataAccessLayer/VolunteeringEventDAO.dart';
+import '../DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
 import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
 import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
 import '../Models/VolunteeringEventRegistration.dart';
 import '../Models/VolunteeringHistory.dart';
+import '../constants/enums.dart';
 import 'CustomWidgets/VolunteeringGraph.dart';
+import 'CustomWidgets/VolunteeringTypePieChart.dart';
+import 'Settings/Settings.dart';
+import 'Settings/SharedPreferences.dart';
 import 'VolunteeringEventDetails.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -40,7 +39,6 @@ class ProfilePageState extends State<ProfilePage> {
   late bool areHistoricalHoursDetailsLoading;
   bool areVolunteeringEventsLoading = true;
   late String _photoURL;
-  late int following;
 
   late int _hoursThisMonth;
   late int _hoursThisYear;
@@ -56,6 +54,8 @@ class ProfilePageState extends State<ProfilePage> {
 
   late List<VolunteeringEvent> upcomingVolunteeringEvents = [];
   late List<VolunteeringEvent> completedVolunteeringEvents = [];
+  late List<VolunteeringEvent> activeVolunteeringEvents = [];
+  late List<VolunteeringEvent> appliedVolunteeringEvents = [];
 
   UserDetails? _userDetails; // Store the user details
   bool _isLoading = true; // Loading state
@@ -79,7 +79,6 @@ class ProfilePageState extends State<ProfilePage> {
       isVolunteeringHistoryLoading = true;
       _volunteeringHistory = [];
       _financialYearShownOnGraph = 24;
-      following = 0;
       upcomingVolunteeringEvents = [];
       completedVolunteeringEvents = [];
       areVolunteeringEventsLoading = true;
@@ -179,39 +178,57 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchVolunteeringEvents() async {
     try {
-      List<VolunteeringEvent> upcomingVolunteering = [];
-      List<VolunteeringEvent> completedVolunteering = [];
+      // Initialize lists
+      final List<VolunteeringEvent> upcomingVolunteering = [];
+      final List<VolunteeringEvent> completedVolunteering = [];
+      final List<VolunteeringEvent> activeVolunteering = [];
+      final List<VolunteeringEvent> appliedVolunteering = [];
 
-      List<VolunteeringEventRegistration> allRegistration =
-          await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(
-              FirebaseAuth.instance.currentUser!.uid);
+      // Fetch all registrations for the user
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      final registrations =
+          await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(userId);
 
-      for (var registration in allRegistration) {
+      // Process each registration
+      for (final registration in registrations) {
+        final event = await VolunteeringEventDAO.getVolunteeringEvent(
+            registration.eventId);
+        if (event == null) continue;
+
         if (registration.isAssigned) {
+          final now = DateTime.now();
+
+          // Completed volunteering
           if (registration.assignedEndDate != null &&
-              registration.assignedEndDate!.isBefore(DateTime.now())) {
-            VolunteeringEvent? event =
-                await VolunteeringEventDAO.getVolunteeringEvent(
-                    registration.eventId);
-            completedVolunteering.add(event!);
+              registration.assignedEndDate!.isBefore(now)) {
+            completedVolunteering.add(event);
           }
-          if (registration.assignedStartDate != null &&
-              registration.assignedStartDate!.isAfter(DateTime.now())) {
-            VolunteeringEvent? event =
-                await VolunteeringEventDAO.getVolunteeringEvent(
-                    registration.eventId);
-            upcomingVolunteering.add(event!);
+          // Active volunteering
+          else if (registration.assignedStartDate == null ||
+              registration.assignedStartDate!.isBefore(now)) {
+            activeVolunteering.add(event);
           }
+          // Upcoming volunteering
+          else {
+            upcomingVolunteering.add(event);
+          }
+        } else {
+          // Applied volunteering
+          appliedVolunteering.add(event);
         }
       }
 
+      // Update the state
       setState(() {
         upcomingVolunteeringEvents.addAll(upcomingVolunteering);
         completedVolunteeringEvents.addAll(completedVolunteering);
+        activeVolunteeringEvents.addAll(activeVolunteering);
+        appliedVolunteeringEvents.addAll(appliedVolunteering);
         areVolunteeringEventsLoading = false;
       });
     } catch (e) {
-      //print('Error fetching events: $e');
+      // Handle errors gracefully
+      print('Error fetching events: $e');
     }
   }
 
@@ -677,333 +694,175 @@ class ProfilePageState extends State<ProfilePage> {
     return recentYears;
   }
 
-  Widget buildUpcomingVolunteering(BuildContext context) {
-    List<Widget> getWidgets() {
-      List<Widget> cards = [];
-
-      for (var event in upcomingVolunteeringEvents) {
-        var widget = Container(
-          height: 110,
-          padding: const EdgeInsets.all(10.0),
-          margin: EdgeInsets.only(left: 20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30.0),
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 10,
-                blurRadius: 15,
-                offset: const Offset(0, 3),
-              ),
-            ],
+  Widget buildEventCard(BuildContext context, dynamic event) {
+    return Container(
+      height: 110,
+      padding: const EdgeInsets.all(10.0),
+      margin: const EdgeInsets.only(left: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30.0),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 10,
+            blurRadius: 15,
+            offset: const Offset(0, 3),
           ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                left: -30,
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.15),
-                        spreadRadius: 10,
-                        blurRadius: 15,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: -30,
+            child: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.15),
+                    spreadRadius: 10,
+                    blurRadius: 15,
+                    offset: const Offset(0, 3),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      event.photoUrls[0],
-                      width: 90,
-                      height: 90,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Image.network(
+                  event.photoUrls[0],
+                  width: 90,
+                  height: 90,
+                  fit: BoxFit.cover,
                 ),
               ),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => VolunteeringEventDetailsPage(
-                      volunteeringEvent: event,
-                    ),
-                  ));
-                },
-                child: Row(
-                  children: [
-                    SizedBox(width: 75),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => VolunteeringEventDetailsPage(
+                  volunteeringEvent: event,
+                ),
+              ));
+            },
+            child: Row(
+              children: [
+                const SizedBox(width: 75),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 180),
+                        child: Text(
+                          event.name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      Row(
                         children: [
+                          Icon(Icons.location_on_rounded,
+                              color: Colors.grey.shade500, size: 15),
+                          const SizedBox(width: 5),
                           Container(
-                            constraints: BoxConstraints(maxWidth: 180),
+                            constraints: const BoxConstraints(maxWidth: 160),
                             child: Text(
-                              event.name,
+                              event.location,
                               style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.grey.shade500,
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                             ),
                           ),
-                          Row(
-                            children: [
-                              Icon(Icons.location_on_rounded,
-                                  color: Colors.grey.shade500, size: 15),
-                              SizedBox(width: 5),
-                              Container(
-                                constraints: BoxConstraints(maxWidth: 160),
-                                child: Text(
-                                  event.location,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                              height: 4), // Spacer between location and date
-                          Text(
-                            "${DateFormat('dd/MM/yy').format(event.date)}",
-                            style: TextStyle(
-                              fontWeight: FontWeight.normal,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('dd/MM/yy').format(event.date),
+                        style: TextStyle(
+                          fontWeight: FontWeight.normal,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildEventList(
+      BuildContext context, List<dynamic> events, String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                events.length.toString(),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade600,
                 ),
               ),
             ],
           ),
-        );
-        cards.add(widget);
-        cards.add(SizedBox(height: 20));
-      }
-      if (cards.isEmpty) cards.add(SizedBox(height: 10));
-      return cards;
-    }
+        ),
+        ...events.map((event) => Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: buildEventCard(context, event),
+            )),
+      ],
+    );
+  }
 
+  Widget buildUpcomingVolunteering(BuildContext context) {
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
-        : Container(
-            padding:
-                const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30.0),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 10,
-                  blurRadius: 15,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(
-                  padding: const EdgeInsets.only(
-                      top: 5, left: 5, right: 10, bottom: 5),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          " Upcoming",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(upcomingVolunteeringEvents.length.toString(),
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey.shade600,
-                            )),
-                      ])),
-              Column(children: getWidgets())
-            ]),
-          );
+        : buildEventList(context, upcomingVolunteeringEvents, "Upcoming");
+  }
+
+  Widget buildActiveVolunteering(BuildContext context) {
+    return areVolunteeringEventsLoading
+        ? const CircularProgressIndicator()
+        : buildEventList(context, activeVolunteeringEvents, "Active");
   }
 
   Widget buildCompletedVolunteering(BuildContext context) {
-    List<Widget> getWidgets() {
-      List<Widget> cards = [];
-
-      for (var event in completedVolunteeringEvents) {
-        var widget = Container(
-          height: 110,
-          padding: const EdgeInsets.all(10.0),
-          margin: EdgeInsets.only(left: 20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30.0),
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 10,
-                blurRadius: 15,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                left: -30,
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.15),
-                        spreadRadius: 10,
-                        blurRadius: 15,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      event.photoUrls[0],
-                      width: 90,
-                      height: 90,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) =>
-                        VolunteeringEventDetailsPage(volunteeringEvent: event),
-                  ));
-                },
-                child: Row(
-                  children: [
-                    SizedBox(width: 75),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            constraints: BoxConstraints(maxWidth: 180),
-                            child: Text(
-                              event.name,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Icon(Icons.location_on_rounded,
-                                  color: Colors.grey.shade500, size: 15),
-                              SizedBox(width: 5),
-                              Container(
-                                constraints: BoxConstraints(maxWidth: 160),
-                                child: Text(
-                                  event.location,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            "${DateFormat('dd/MM/yy').format(event.date)}",
-                            style: TextStyle(
-                              fontWeight: FontWeight.normal,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-        cards.add(widget);
-        cards.add(SizedBox(height: 20));
-      }
-
-      if (cards.isEmpty) cards.add(SizedBox(height: 10));
-      return cards;
-    }
-
     return areVolunteeringEventsLoading
         ? const CircularProgressIndicator()
-        : Container(
-            padding:
-                const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30.0),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 10,
-                  blurRadius: 15,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(
-                  padding: const EdgeInsets.only(
-                      top: 5, left: 5, right: 10, bottom: 5),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          " Completed",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(completedVolunteeringEvents.length.toString(),
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey.shade600,
-                            )),
-                      ])),
-              Column(children: getWidgets())
-            ]),
-          );
+        : buildEventList(context, completedVolunteeringEvents, "Completed");
+  }
+
+  Widget buildAppliedVolunteering(BuildContext context) {
+    return areVolunteeringEventsLoading
+        ? const CircularProgressIndicator()
+        : buildEventList(context, appliedVolunteeringEvents, "Signed Up");
   }
 
   List<Widget> buildUserProfile() {
@@ -1012,7 +871,11 @@ class ProfilePageState extends State<ProfilePage> {
       const SizedBox(height: 25),
       buildVolunteeringGraph(context),
       const SizedBox(height: 25),
+      buildAppliedVolunteering(context),
+      const SizedBox(height: 25),
       buildUpcomingVolunteering(context),
+      const SizedBox(height: 25),
+      buildActiveVolunteering(context),
       const SizedBox(height: 25),
       buildCompletedVolunteering(context),
       const SizedBox(height: 25),

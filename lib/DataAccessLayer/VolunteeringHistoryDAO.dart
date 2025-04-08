@@ -82,7 +82,7 @@ class VolunteeringHistoryDAO {
     try {
       DateTime currentDate = DateTime.now();
       DateTime startDateOfPastMonth =
-          DateTime(currentDate.year, currentDate.month - 1, 1);
+          DateTime(currentDate.year, currentDate.month, 1);
 
       return getUsersVolunteeringHoursInTimePeriod(
           userId, startDateOfPastMonth, currentDate, type);
@@ -103,7 +103,7 @@ class VolunteeringHistoryDAO {
       if (currentDate.month >= 4) {
         startDateOfFinancialYear = DateTime(currentDate.year, 4, 1);
       } else {
-        startDateOfFinancialYear = DateTime(currentDate.year - 1, 4, 1);
+        startDateOfFinancialYear = DateTime(currentDate.year, 4, 1);
       }
 
       return getUsersVolunteeringHoursInTimePeriod(
@@ -121,7 +121,7 @@ class VolunteeringHistoryDAO {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('volunteeringHistory')
-          .where('UID', isEqualTo: userId)
+          .where('userId', isEqualTo: userId)
           .get();
 
       int totalMinutes = 0;
@@ -149,14 +149,14 @@ class VolunteeringHistoryDAO {
       if (type == "Any") {
         querySnapshot = await FirebaseFirestore.instance
             .collection('volunteeringHistory')
-            .where('UID', isEqualTo: userId)
+            .where('userId', isEqualTo: userId)
             .where('date', isGreaterThanOrEqualTo: startDate)
             .where('date', isLessThanOrEqualTo: endDate)
             .get();
       } else {
         querySnapshot = await FirebaseFirestore.instance
             .collection('volunteeringHistory')
-            .where('UID', isEqualTo: userId)
+            .where('userId', isEqualTo: userId)
             .where('date', isGreaterThanOrEqualTo: startDate)
             .where('date', isLessThanOrEqualTo: endDate)
             .where('type', isEqualTo: type)
@@ -275,6 +275,28 @@ class VolunteeringHistoryDAO {
       return historyList;
     } catch (e) {
       print('Error fetching volunteering history by organiser: $e');
+      return [];
+    }
+  }
+
+  static Future<List<VolunteeringHistory>> getHistoryByEventAndUser(
+      String eventId, String userId) async {
+    try {
+      // Get the collection for volunteering history
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('volunteeringHistory')
+          .where('eventId', isEqualTo: eventId)
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      // Map the snapshot to a list of VolunteeringHistory objects
+      List<VolunteeringHistory> historyList = querySnapshot.docs
+          .map((doc) => VolunteeringHistory.fromSnapshot(doc))
+          .toList();
+
+      return historyList;
+    } catch (e) {
+      print('Error fetching volunteering history by event: $e');
       return [];
     }
   }

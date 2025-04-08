@@ -2,6 +2,7 @@ import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventFavouritesDAO.d
 import 'package:HeartOfExperian/Pages/Attendees.dart';
 import 'package:HeartOfExperian/Pages/ColleagueProfile.dart';
 import 'package:HeartOfExperian/Pages/CustomWidgets/EventLocationMap.dart';
+import 'package:HeartOfExperian/Pages/review_rating.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -184,7 +185,7 @@ class VolunteeringEventDetailsPageState
         maxLines: 2,
         style: const TextStyle(
           fontWeight: FontWeight.w700,
-          fontSize: 27,
+          fontSize: 20,
           decorationColor: Colors.black,
         ),
       ),
@@ -256,8 +257,7 @@ class VolunteeringEventDetailsPageState
         Icon(Icons.calendar_month, color: Colors.grey.shade500, size: 20),
         const SizedBox(width: 21),
         Text(
-          DateFormat('EEEE, d\'th\' MMMM yyyy')
-              .format(widget.volunteeringEvent.date),
+          "${DateFormat('EEEE, d\'th\' MMMM yyyy').format(widget.volunteeringEvent.date)}",
           style: TextStyle(
             fontWeight: FontWeight.normal,
             color: Colors.grey.shade800,
@@ -308,7 +308,8 @@ class VolunteeringEventDetailsPageState
         ? null
         : attendeesList.firstWhereOrNull(
             (element) =>
-                element.userId == FirebaseAuth.instance.currentUser!.uid && element.isAssigned,
+                element.userId == FirebaseAuth.instance.currentUser!.uid &&
+                element.isAssigned,
           );
 
     return !areOrganiserDetailsLoading
@@ -527,12 +528,12 @@ class VolunteeringEventDetailsPageState
   }
 
   Widget buildRegisterButton(BuildContext context) {
-    bool isAssigned = attendeesList.isNotEmpty
-        ? attendeesList
-            .firstWhere((element) =>
-                element.userId == FirebaseAuth.instance.currentUser!.uid)
-            .isAssigned
-        : false;
+    VolunteeringEventRegistration? info = attendeesList.firstWhereOrNull(
+        (element) => element.userId == FirebaseAuth.instance.currentUser!.uid);
+
+    bool isAssigned = info?.isAssigned ?? false;
+    bool isCompleted =
+        isAssigned && info!.assignedEndDate!.isBefore(DateTime.now());
     return (!isUserRegistered)
         ? Container(
             alignment: Alignment.center,
@@ -590,9 +591,11 @@ class VolunteeringEventDetailsPageState
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isAssigned
-                    ? [Colors.grey.shade400, Colors.blueGrey.shade500]
-                    : [Colors.red.shade400, Colors.red.shade500],
+                colors: isCompleted
+                    ? [Colors.green.shade400, Colors.greenAccent]
+                    : isAssigned
+                        ? [Colors.grey.shade400, Colors.blueGrey.shade500]
+                        : [Colors.red.shade400, Colors.red.shade500],
               ),
               boxShadow: [
                 BoxShadow(
@@ -610,6 +613,17 @@ class VolunteeringEventDetailsPageState
                     children: [
                   TextButton(
                       onPressed: () async {
+                        if (isCompleted) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => ReviewAndRating(
+                                      eventId:
+                                          widget.volunteeringEvent.reference.id,
+                                      eventName: widget.volunteeringEvent.name,
+                                    )),
+                          );
+                          return;
+                        }
                         if (isAssigned) {
                           ScaffoldMessenger.of(context)
                               .showSnackBar(const SnackBar(
@@ -629,7 +643,7 @@ class VolunteeringEventDetailsPageState
                                 valueColor:
                                     AlwaysStoppedAnimation<Color>(Colors.white),
                               )
-                            : const Text("Drop out",
+                            : Text(isCompleted ? 'Review' : "Drop out",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,

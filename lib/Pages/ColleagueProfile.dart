@@ -13,6 +13,7 @@ import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
 import '../Models/Following.dart';
 import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
+import '../Models/VolunteeringEventRegistration.dart';
 import '../Models/VolunteeringHistory.dart';
 import 'CustomWidgets/BackButton.dart';
 import 'CustomWidgets/VolunteeringGraph.dart';
@@ -159,25 +160,33 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
       List<VolunteeringEvent> upcomingVolunteering = [];
       List<VolunteeringEvent> completedVolunteering = [];
 
-      List<String> allEventIds =
+      List<VolunteeringEventRegistration> allRegistration =
           await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(
-              _userDetails.UID);
+              FirebaseAuth.instance.currentUser!.uid);
 
-      for (var eventId in allEventIds) {
-        VolunteeringEvent? event =
-            await VolunteeringEventDAO.getVolunteeringEvent(eventId);
-
-        if (event!.date.isAfter(DateTime.now())) {
-          upcomingVolunteering.add(event);
-        } else {
-          completedVolunteering.add(event);
+      for (var registration in allRegistration) {
+        if (registration.isAssigned) {
+          if (registration.assignedEndDate != null &&
+              registration.assignedEndDate!.isBefore(DateTime.now())) {
+            VolunteeringEvent? event =
+                await VolunteeringEventDAO.getVolunteeringEvent(
+                    registration.eventId);
+            completedVolunteering.add(event!);
+          }
+          if (registration.assignedStartDate != null &&
+              registration.assignedStartDate!.isAfter(DateTime.now())) {
+            VolunteeringEvent? event =
+                await VolunteeringEventDAO.getVolunteeringEvent(
+                    registration.eventId);
+            upcomingVolunteering.add(event!);
+          }
         }
       }
 
       setState(() {
         upcomingVolunteeringEvents.addAll(upcomingVolunteering);
-              completedVolunteeringEvents.addAll(completedVolunteering);
-              areVolunteeringEventsLoading = false;
+        completedVolunteeringEvents.addAll(completedVolunteering);
+        areVolunteeringEventsLoading = false;
       });
     } catch (e) {
       //print('Error fetching events: $e');

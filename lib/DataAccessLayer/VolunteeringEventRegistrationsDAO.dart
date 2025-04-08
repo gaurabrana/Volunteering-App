@@ -38,7 +38,7 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<List<String>> getAllEventIdsForUser(String userId) async {
+  static Future<List<VolunteeringEventRegistration>> getAllEventIdsForUser(String userId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('volunteeringEventRegistrations')
@@ -46,7 +46,7 @@ class VolunteeringEventRegistrationsDAO {
           .get();
 
       return querySnapshot.docs
-          .map((doc) => VolunteeringEventRegistration.fromSnapshot(doc).eventId)
+          .map((doc) => VolunteeringEventRegistration.fromSnapshot(doc))
           .toList();
     } catch (e) {
       print('Error fetching registrations: $e');
