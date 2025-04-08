@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:HeartOfExperian/Models/UserDetails.dart';
 import 'package:HeartOfExperian/Pages/Authentication/CreateAccount.dart';
 import 'package:HeartOfExperian/Pages/Settings/ForgotPassword.dart';
+import 'package:HeartOfExperian/Pages/common_helper.dart';
+import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart' as material;
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart';
+import 'package:rive/rive.dart' as rive;
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../DataAccessLayer/UserDAO.dart';
 import '../CustomWidgets/FormInputFields/EmailInputField.dart';
@@ -49,7 +51,7 @@ class _SignInPageState extends State<SignInPage> {
                     child: Container(
                       height: 250,
                       width: double.infinity,
-                      child: RiveAnimation.asset(
+                      child: rive.RiveAnimation.asset(
                         'assets/animations/simple_wave.riv',
                       ),
                     ))),
@@ -63,6 +65,44 @@ class _SignInPageState extends State<SignInPage> {
                         _LogInForm(
                             logInNavigatorKey: widget.logInNavigatorKey,
                             mainNavigatorKey: widget.mainNavigatorKey),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            elevation: 5,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 20.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                              side: const BorderSide(color: Colors.grey),
+                            ),
+                          ),
+                          onPressed: () async {
+                            final userCredential =
+                                await CommonHelper.signInWithGoogle();
+                            if (userCredential != null) {
+                              final user = userCredential.user!;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Signed in as ${user.displayName}')),
+                              );
+                              await saveAndRedirect(user);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Google Sign-In canceled or failed')),
+                              );
+                            }
+                          },
+                          icon: Image.asset(
+                            'assets/images/google.png', // Replace with your Google logo asset
+                            height: 24.0,
+                          ),
+                          label: const Text(
+                            'Sign in',
+                            style: TextStyle(fontSize: 16.0),
+                          ),
+                        ),
                         Container(
                             alignment: Alignment.center,
                             child: Column(
@@ -70,28 +110,30 @@ class _SignInPageState extends State<SignInPage> {
                                 children: [
                                   SizedBox(height: 40),
                                   const Text("No account?"),
-                                  Container(
-                                    width: 500.0,
-                                    child: TextButton(
-                                      onPressed: () async {
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    CreateAccountPage(
-                                                      mainNavigatorKey: widget
-                                                          .mainNavigatorKey,
-                                                      logInNavigatorKey: widget
-                                                          .logInNavigatorKey,
-                                                    )));
-                                      },
-                                      child: const Text('Create account',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20,
-                                            decorationColor: Colors.black,
-                                          )),
-                                    ),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      TextButton(
+                                        onPressed: () async {
+                                          Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      CreateAccountPage(
+                                                        mainNavigatorKey: widget
+                                                            .mainNavigatorKey,
+                                                        logInNavigatorKey: widget
+                                                            .logInNavigatorKey,
+                                                      )));
+                                        },
+                                        child: const Text('Create account',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              decorationColor: Colors.black,
+                                            )),
+                                      ),
+                                    ],
                                   ),
                                 ])),
                       ],
@@ -100,31 +142,42 @@ class _SignInPageState extends State<SignInPage> {
       bottomNavigationBar: null,
     );
   }
-}
 
-// logOutUser(BuildContext context, GlobalKey<NavigatorState> navKey) async {
-//   SignInSharedPreferences.setSignedIn(false);
-//   User user;
-//   if (_auth.currentUser != null) {
-//     user = _auth.currentUser as User;
-//     await _auth.signOut();
-//     final String email = user.email!;
-//     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-//       content: Text(email + ' has successfully signed out.'),
-//     ));
-//     // navKey.currentState?.pushAndRemoveUntil(
-//     //   MaterialPageRoute(builder: (context) => SignInPage()),
-//     //       (route) => false,
-//     // );
-//     Navigator.of(context).popUntil((route) => route.isFirst);
-//     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => SignInPage()));
-//   } else {
-//     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-//       content: Text('No one has signed in.'),
-//     ));
-//     return;
-//   }
-// }
+  Future<void> saveAndRedirect(User? user) async {
+    if (user != null) {
+      UserDetails? userDetails = await UserDAO.getUserDetails(user.uid);
+      if (userDetails == null) {
+        await UserDAO.storeUserDetails(user.uid, user.displayName ?? 'user',
+            user.email ?? 'email', UserRole.user.name,
+            photoUrl: user.photoURL);
+      }
+      SignInSharedPreferences.setSignedIn(true);
+      UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
+      if (userDetail != null) {
+        SignInSharedPreferences.setCurrentUserDetails(userDetail);
+      }
+      redirectToMainApp(context);
+    }
+  }
+
+  redirectToMainApp(BuildContext context) async {
+    widget.logInNavigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (context) => NavBarManager(
+          initialIndex: 0,
+          searchVolunteeringPage: SearchVolunteeringPage(),
+          feedPage: Homepage(
+              mainNavigatorKey: widget.mainNavigatorKey,
+              logInNavigatorKey: widget.logInNavigatorKey),
+          //profilePage: ProfilePage(),
+          leaderboardPage: LeaderboardPage(),
+          mainNavigatorKey: widget.mainNavigatorKey,
+          logInNavigatorKey: widget.logInNavigatorKey,
+        ),
+      ),
+    );
+  }
+}
 
 Future<void> logOutUser(
   BuildContext context,
@@ -283,7 +336,7 @@ class _LogInFormState extends State<_LogInForm> {
                           width: 100,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
-                            gradient: material.LinearGradient(
+                            gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
@@ -325,23 +378,7 @@ class _LogInFormState extends State<_LogInForm> {
       );
 
       final user = userCredential.user;
-      if (user != null) {
-        setState(() {
-          _userEmail = user.email as String;
-          _loginMessage = '';
-        });
-        SignInSharedPreferences.setSignedIn(true);
-        UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
-        if (userDetail != null) {
-          SignInSharedPreferences.setCurrentUserDetails(userDetail);
-        }
-        redirectToMainApp(context);
-      } else {
-        setState(() {
-          _loginMessage =
-              'No account found with that email. Please sign up or try a different email address.';
-        });
-      }
+      await saveAndRedirect(user);
     } catch (e) {
       if (e is FirebaseAuthException) {
         //print('e.code: ' + e.code);
@@ -374,6 +411,26 @@ class _LogInFormState extends State<_LogInForm> {
           _loginMessage = 'Error logging in. Please try again2.';
         });
       }
+    }
+  }
+
+  Future<void> saveAndRedirect(User? user) async {
+    if (user != null) {
+      setState(() {
+        _userEmail = user.email as String;
+        _loginMessage = '';
+      });
+      SignInSharedPreferences.setSignedIn(true);
+      UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
+      if (userDetail != null) {
+        SignInSharedPreferences.setCurrentUserDetails(userDetail);
+      }
+      redirectToMainApp(context);
+    } else {
+      setState(() {
+        _loginMessage =
+            'No account found with that email. Please sign up or try a different email address.';
+      });
     }
   }
 

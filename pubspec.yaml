@@ -52,6 +52,7 @@ dependencies:
   simple_circular_progress_bar:
   confetti:
   firebase_data_connect: ^0.1.4
+  google_sign_in: ^6.3.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -94,6 +95,7 @@ flutter:
     - assets/animations/leaderboard_animation.riv
     - assets/animations/simple_wave.riv
     - assets/images/sign_in_top.png
+    - assets/images/google.png
     - assets/images/badges/5_hours.png
     - assets/images/badges/10_hours.png
     - assets/images/badges/15_hours.png

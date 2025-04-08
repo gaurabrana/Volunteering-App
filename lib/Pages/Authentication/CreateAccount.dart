@@ -204,8 +204,7 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
       if (user != null) {
         await UserDAO.storeUserDetails(
           user.uid,
-          _userNameController.text,
-          _selectedTeamName,
+          _userNameController.text,          
           ("${_emailController.text}@experian.com"),
           _userRole,
         );

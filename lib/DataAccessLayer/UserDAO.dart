@@ -6,15 +6,16 @@ import 'PhotoDAO.dart';
 class UserDAO {
   static const String defaultDomain = "@experian.com";
 
-  static Future<void> storeUserDetails(String userId, String userName,
-      String team, String email, String role) async {
+  static Future<void> storeUserDetails(
+      String userId, String userName, String email, String role,
+      {String? photoUrl}) async {
     try {
       await FirebaseFirestore.instance.collection('users').doc(userId).set({
         'UID': userId,
         'name': userName,
         'email': email,
         'role': role,
-        'profilePhotoUrl': PhotoDAO.getDefaultProfilePictureURL(),
+        'profilePhotoUrl': photoUrl ?? PhotoDAO.getDefaultProfilePictureURL(),
       });
     } catch (e) {
       //print('Error storing user details: $e');
