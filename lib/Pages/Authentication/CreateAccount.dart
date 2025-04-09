@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../DataAccessLayer/UserDAO.dart';
+import '../../Models/UserDetails.dart';
 import '../CustomWidgets/BackButton.dart';
 import '../CustomWidgets/FormInputFields/ConfirmPasswordInputField.dart';
 import '../CustomWidgets/FormInputFields/EmailInputField.dart';
@@ -204,11 +205,14 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
       if (user != null) {
         await UserDAO.storeUserDetails(
           user.uid,
-          _userNameController.text,          
+          _userNameController.text,
           ("${_emailController.text}@experian.com"),
           _userRole,
         );
-
+        UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
+        if (userDetail != null) {
+          SignInSharedPreferences.setCurrentUserDetails(userDetail);
+        }
         setState(() {
           _userEmail = user.email as String;
           _registrationErrorMessage = "";

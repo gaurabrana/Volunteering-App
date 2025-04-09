@@ -15,6 +15,7 @@ import '../Models/VolunteeringHistory.dart';
 import '../constants/enums.dart';
 import 'CustomWidgets/VolunteeringGraph.dart';
 import 'CustomWidgets/VolunteeringTypePieChart.dart';
+import 'Settings/EditProfile.dart';
 import 'Settings/Settings.dart';
 import 'Settings/SharedPreferences.dart';
 import 'VolunteeringEventDetails.dart';
@@ -911,6 +912,29 @@ class ProfilePageState extends State<ProfilePage> {
         children: [
           buildProfileName(context, _userDetails!.name),
           if (_userDetails!.role == UserRole.user) ...buildUserProfile(),
+          if (_userDetails!.role == UserRole.organisation &&
+              organisationDetails == null)
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => EditProfilePage(),
+                  ),
+                );
+              },
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    "Complete your profile in profile setting",
+                    style: TextStyle(
+                      fontSize: 16,
+                      decoration: TextDecoration.underline
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (_userDetails!.role == UserRole.organisation &&
               organisationDetails != null)
             ...buildOrganisationDetails(),

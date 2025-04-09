@@ -2,6 +2,7 @@ import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventFavouritesDAO.d
 import 'package:HeartOfExperian/Pages/Attendees.dart';
 import 'package:HeartOfExperian/Pages/ColleagueProfile.dart';
 import 'package:HeartOfExperian/Pages/CustomWidgets/EventLocationMap.dart';
+import 'package:HeartOfExperian/Pages/Settings/SharedPreferences.dart';
 import 'package:HeartOfExperian/Pages/review_rating.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../DataAccessLayer/UserDAO.dart';
@@ -18,6 +20,7 @@ import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
 import '../Models/VolunteeringEventFavourite.dart';
 import '../Models/VolunteeringEventRegistration.dart';
+import '../constants/enums.dart';
 import 'AssignVolunteers.dart';
 import 'CustomWidgets/BackButton.dart';
 
@@ -42,7 +45,8 @@ class VolunteeringEventDetailsPageState
   late bool isUserRegistered;
   late bool isFavourite;
   bool isFavouriteLoading = true;
-  bool isCurrentUserOrganiser = false;
+  bool isCurrentUserOwner = false;
+  bool isCurrentUserAnOrganisation = false;
   List<VolunteeringEventRegistration> attendeesList = [];
 
   @override
@@ -61,9 +65,15 @@ class VolunteeringEventDetailsPageState
     try {
       UserDetails? userDetails =
           await UserDAO.getUserDetails(widget.volunteeringEvent.organiserUID);
+
+      UserDetails? detail =
+          await SignInSharedPreferences.getCurrentUserDetails();
+      if (detail != null) {
+        isCurrentUserAnOrganisation = detail.role == UserRole.organisation;
+      }
       setState(() {
         _organiserDetails = userDetails!;
-        isCurrentUserOrganiser =
+        isCurrentUserOwner =
             userDetails.UID == FirebaseAuth.instance.currentUser!.uid;
         areOrganiserDetailsLoading = false;
       });
@@ -165,7 +175,7 @@ class VolunteeringEventDetailsPageState
                 children: [
                   const SizedBox(width: 20),
                   !areAttendeeDetailsLoading
-                      ? isCurrentUserOrganiser
+                      ? isCurrentUserOwner
                           ? buildOrganiserButton()
                           : buildRegisterButton(context)
                       : const CircularProgressIndicator()
@@ -318,7 +328,7 @@ class VolunteeringEventDetailsPageState
             children: [
               // if assigned show details
               // role, start and end
-              if (info != null && !isCurrentUserOrganiser)
+              if (info != null && !isCurrentUserOwner)
                 Row(
                   children: [
                     Icon(Icons.assignment_turned_in_outlined),
@@ -534,124 +544,127 @@ class VolunteeringEventDetailsPageState
     bool isAssigned = info?.isAssigned ?? false;
     bool isCompleted =
         isAssigned && info!.assignedEndDate!.isBefore(DateTime.now());
-    return (!isUserRegistered)
-        ? Container(
-            alignment: Alignment.center,
-            height: 60,
-            width: 250,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 5,
-                  blurRadius: 7,
-                  offset: const Offset(0, 3),
+    return (!isCurrentUserOwner && isCurrentUserAnOrganisation)
+        ? SizedBox.shrink()
+        : (!isUserRegistered)
+            ? Container(
+                alignment: Alignment.center,
+                height: 60,
+                width: 250,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                  TextButton(
-                      onPressed: () async {
-                        registerUser();
-                      },
-                      child: Container(
-                        height: 40,
-                        width: 400,
-                        alignment: Alignment.center,
-                        child: _registrationInProgress
-                            ? const CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              )
-                            : const Text("Sign up",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                )),
-                      ))
-                ])))
-        : Container(
-            alignment: Alignment.center,
-            height: 60,
-            width: 250,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isCompleted
-                    ? [Colors.green.shade400, Colors.greenAccent]
-                    : isAssigned
-                        ? [Colors.grey.shade400, Colors.blueGrey.shade500]
-                        : [Colors.red.shade400, Colors.red.shade500],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 5,
-                  blurRadius: 7,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                  TextButton(
-                      onPressed: () async {
-                        if (isCompleted) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => ReviewAndRating(
-                                      eventId:
-                                          widget.volunteeringEvent.reference.id,
-                                      eventName: widget.volunteeringEvent.name,
+                child: Center(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                      TextButton(
+                          onPressed: () async {
+                            registerUser();
+                          },
+                          child: Container(
+                            height: 40,
+                            width: 400,
+                            alignment: Alignment.center,
+                            child: _registrationInProgress
+                                ? const CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  )
+                                : const Text("Sign up",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 20,
+                                      color: Colors.white,
                                     )),
-                          );
-                          return;
-                        }
-                        if (isAssigned) {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(const SnackBar(
-                            content: Text(
-                                'Cannot drop out as you are already assigned to a role'),
-                          ));
-                          return;
-                        }
-                        deregisterUser();
-                      },
-                      child: Container(
-                        height: 40,
-                        width: 400,
-                        alignment: Alignment.center,
-                        child: _registrationInProgress
-                            ? const CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              )
-                            : Text(isCompleted ? 'Review' : "Drop out",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                )),
-                      ))
-                ])));
+                          ))
+                    ])))
+            : Container(
+                alignment: Alignment.center,
+                height: 60,
+                width: 250,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isCompleted
+                        ? [Colors.green.shade400, Colors.greenAccent]
+                        : isAssigned
+                            ? [Colors.grey.shade400, Colors.blueGrey.shade500]
+                            : [Colors.red.shade400, Colors.red.shade500],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Center(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                      TextButton(
+                          onPressed: () async {
+                            if (isCompleted) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => ReviewAndRating(
+                                          eventId: widget
+                                              .volunteeringEvent.reference.id,
+                                          eventName:
+                                              widget.volunteeringEvent.name,
+                                        )),
+                              );
+                              return;
+                            }
+                            if (isAssigned) {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content: Text(
+                                    'Cannot drop out as you are already assigned to a role'),
+                              ));
+                              return;
+                            }
+                            deregisterUser();
+                          },
+                          child: Container(
+                            height: 40,
+                            width: 400,
+                            alignment: Alignment.center,
+                            child: _registrationInProgress
+                                ? const CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  )
+                                : Text(isCompleted ? 'Review' : "Drop out",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 20,
+                                      color: Colors.white,
+                                    )),
+                          ))
+                    ])));
   }
 
   Future<void> registerUser() async {
