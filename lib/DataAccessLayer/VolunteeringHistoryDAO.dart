@@ -1,9 +1,10 @@
-import 'package:HeartOfExperian/Models/LeaderboardStatistic.dart';
 import 'package:HeartOfExperian/Models/UserDetails.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../Models/Notification_Model.dart';
 import '../Models/VolunteeringHistory.dart';
+import '../Pages/common_helper.dart';
 import 'UserDAO.dart';
 
 class VolunteeringHistoryDAO {
@@ -40,6 +41,14 @@ class VolunteeringHistoryDAO {
         'eventName': volunteeringHistory.eventName,
         'userName': volunteeringHistory.userName
       });
+      NotificationMessage message = CommonHelper.prepareNotificationBody(
+          title: "Work Record Logged",
+          body:
+              "Your work for event: ${volunteeringHistory.eventName} has been logged by the organiser",
+          data: {"id": volunteeringHistory.eventId});
+
+      await CommonHelper.sendNotificationToAssignedUser(
+          volunteeringHistory.userId, message);
     } catch (e) {
       print('Error storing volunteering history details: $e');
     }
@@ -195,46 +204,6 @@ class VolunteeringHistoryDAO {
       //print('Error retrieving volunteering hours from Firestore: $e');
       return null;
     }
-  }
-
-  static Future<List<LeaderboardStatistic>> getLeaderboardStatistics(
-      DateTime startDate, DateTime endDate, String type) async {
-    List<UserDetails?> users = await UserDAO.getAllUsers();
-    List<LeaderboardStatistic> leaderboardStatistics = [];
-
-    FirebaseAuth auth = FirebaseAuth.instance;
-    User? currentUser = auth.currentUser;
-
-    for (UserDetails? user in users) {
-      if (user != null) {
-        int numVolunteeringHours = await getUsersVolunteeringHoursInTimePeriod(
-            user.UID, startDate, endDate, type);
-
-        String userName = (user.UID == currentUser?.uid) ? 'You' : (user.name);
-
-        LeaderboardStatistic leaderboardStatistic = LeaderboardStatistic(
-          ID: user.UID,
-          name: userName,
-          numHours: numVolunteeringHours,
-          profilePhotoURL: user.profilePhotoUrl,
-          rank: 0,
-        );
-        leaderboardStatistics.add(leaderboardStatistic);
-      }
-    }
-    leaderboardStatistics.sort((a, b) => b.numHours.compareTo(a.numHours));
-
-    int currentRank = 1;
-    for (int i = 0; i < leaderboardStatistics.length; i++) {
-      if (i > 0 &&
-          leaderboardStatistics[i].numHours !=
-              leaderboardStatistics[i - 1].numHours) {
-        currentRank = i + 1;
-      }
-      leaderboardStatistics[i].rank = currentRank;
-    }
-
-    return leaderboardStatistics;
   }
 
   static Future<List<VolunteeringHistory>> getHistoryByEvent(

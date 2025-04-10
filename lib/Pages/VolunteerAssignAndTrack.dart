@@ -26,28 +26,28 @@ class _VolunteerAssignandTrackState extends State<VolunteerAssignandTrack> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      initialIndex: 0,
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Your Events', style: TextStyle(fontSize: 24)),
-        ),
-        body: Column(          
-          children: [
-            Center(
-              child: Text(
-                'Select event you want to manage',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text('Your Events', style: TextStyle(fontSize: 24)),
+      ),
+      body: Column(
+        children: [
+          Center(
+            child: Text(
+              'Select event you want to manage',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            SizedBox(
-              height: 10,
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: buildEventList(),
             ),
-            buildEventList(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

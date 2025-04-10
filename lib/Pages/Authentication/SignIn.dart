@@ -7,13 +7,12 @@ import 'package:HeartOfExperian/Pages/common_helper.dart';
 import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart' as rive;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:rive/rive.dart' as rive;
 
 import '../../DataAccessLayer/UserDAO.dart';
 import '../CustomWidgets/FormInputFields/EmailInputField.dart';
 import '../CustomWidgets/FormInputFields/PasswordInputField.dart';
-import '../Leaderboard.dart';
 import '../NavBarManager.dart';
 import '../SearchVolunteering.dart';
 import '../Settings/SharedPreferences.dart';
@@ -169,8 +168,6 @@ class _SignInPageState extends State<SignInPage> {
           feedPage: Homepage(
               mainNavigatorKey: widget.mainNavigatorKey,
               logInNavigatorKey: widget.logInNavigatorKey),
-          //profilePage: ProfilePage(),
-          leaderboardPage: LeaderboardPage(),
           mainNavigatorKey: widget.mainNavigatorKey,
           logInNavigatorKey: widget.logInNavigatorKey,
         ),
@@ -191,6 +188,13 @@ Future<void> logOutUser(
 
     // Sign out from Firebase
     await _auth.signOut();
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      googleSignIn.signOut();
+    } on Exception catch (e) {
+      // TODO
+    }
 
     // Clear locally stored user details
     await SignInSharedPreferences.clearCurrentUserDetails();
@@ -452,8 +456,6 @@ class _LogInFormState extends State<_LogInForm> {
           feedPage: Homepage(
               mainNavigatorKey: widget.mainNavigatorKey,
               logInNavigatorKey: widget.logInNavigatorKey),
-          //profilePage: ProfilePage(),
-          leaderboardPage: LeaderboardPage(),
           mainNavigatorKey: widget.mainNavigatorKey,
           logInNavigatorKey: widget.logInNavigatorKey,
         ),

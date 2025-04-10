@@ -1,18 +1,16 @@
-import 'dart:convert';
-
-import 'package:HeartOfExperian/helper.dart';
-import 'package:HeartOfExperian/notification.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:googleapis_auth/auth.dart';
-import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../Models/Notification_Model.dart';
+import '../Models/VolunteeringEvent.dart';
 import '../Models/VolunteeringEventRegistration.dart';
+import '../Pages/common_helper.dart';
 
 class VolunteeringEventRegistrationsDAO {
   static Future<void> addVolunteeringEventRegistration(
-      VolunteeringEventRegistration volunteeringEventRegistration) async {
+      VolunteeringEventRegistration volunteeringEventRegistration,
+      String organiserId,
+      VolunteeringEvent event) async {
     try {
       await FirebaseFirestore.instance
           .collection('volunteeringEventRegistrations')
@@ -22,13 +20,20 @@ class VolunteeringEventRegistrationsDAO {
         'eventId': volunteeringEventRegistration.eventId,
         'isAssigned': volunteeringEventRegistration.isAssigned
       });
+      NotificationMessage message = CommonHelper.prepareNotificationBody(
+          title: "Application Request",
+          body:
+              "A volunteer ${FirebaseAuth.instance.currentUser?.displayName ?? ''} has applied for event: ${event.name}",
+          data: {"id": volunteeringEventRegistration.eventId});
+
+      await CommonHelper.sendNotificationToAssignedUser(organiserId, message);
     } catch (e) {
       print('Error storing registration: $e');
     }
   }
 
-  static Future<void> removeVolunteeringEventRegistration(
-      String userId, String eventId) async {
+  static Future<void> removeVolunteeringEventRegistration(String userId,
+      String eventId, String eventName, String organiserId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('volunteeringEventRegistrations')
@@ -38,6 +43,11 @@ class VolunteeringEventRegistrationsDAO {
 
       if (querySnapshot.docs.isNotEmpty) {
         await querySnapshot.docs.first.reference.delete();
+        NotificationMessage message = CommonHelper.prepareNotificationBody(
+            title: "Application Request Removal",
+            body: "A volunteer has opted out of your event: $eventName",
+            data: {"id": eventId});
+        await CommonHelper.sendNotificationToAssignedUser(organiserId, message);
       } else {
         print('No matching document found for deletion');
       }

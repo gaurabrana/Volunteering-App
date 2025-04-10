@@ -178,4 +178,19 @@ class UserDAO {
       print("Error updating user token: $e");
     }
   }
+
+  static Future<String?> getFCMToken(String userId) async {
+    // Retrieve User FCM token from Firestore
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      String? fcmToken = userDoc['token'];
+      return fcmToken;
+    } on Exception catch (e) {
+      print("Errow while getting fcmToken $e");
+      return null;
+    }
+  }
 }

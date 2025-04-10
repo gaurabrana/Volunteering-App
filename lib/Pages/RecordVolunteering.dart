@@ -45,12 +45,13 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
   @override
   void initState() {
     super.initState();
+    intialiseData();
   }
 
   void intialiseData() {
     _hours = 0;
     _minutes = 0;
-    _date = DateTime.now();
+    _date = widget.registration!.assignedStartDate!;
     _savingInProgress = false;
     _durationValid = true;
     _durationErrorMessage = "";
@@ -252,7 +253,7 @@ class RecordVolunteeringPageState extends State<RecordVolunteeringPage> {
     // Show the date picker
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: firstDate,
       firstDate: firstDate,
       lastDate: lastDate,
     );

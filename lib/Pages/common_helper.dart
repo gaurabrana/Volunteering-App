@@ -1,11 +1,12 @@
+import 'package:HeartOfExperian/Models/Notification_Model.dart' as nm;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../DataAccessLayer/UserDAO.dart';
 import '../Models/VolunteeringEvent.dart';
 import '../helper.dart';
-import 'Leaderboard.dart';
 import 'NavBarManager.dart';
 import 'SearchVolunteering.dart';
 import 'homepage.dart';
@@ -25,7 +26,6 @@ class CommonHelper {
             mainNavigatorKey: mainNavigatorKey,
             logInNavigatorKey: logInNavigatorKey,
           ),
-          leaderboardPage: LeaderboardPage(),
           mainNavigatorKey: mainNavigatorKey,
           logInNavigatorKey: logInNavigatorKey,
         ),
@@ -65,46 +65,32 @@ class CommonHelper {
   }
 
   static Future<void> sendNotificationToAssignedUser(
-      String assignedUserId, String eventId) async {
+      String assignedUserId, nm.NotificationMessage notificationMessage) async {
     try {
-      // Retrieve User B's FCM token from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(assignedUserId)
-          .get();
-      String? fcmToken = userDoc['token'];
+      String? fcmToken = await UserDAO.getFCMToken(assignedUserId);
 
       if (fcmToken != null) {
-        // Prepare the notification payload
-        Map<String, Map<String, Object>> message = prepareNotificationBody(
-            fcmToken: fcmToken,
-            title: "Volunteer Assignment",
-            body: "You have been assigned to an event",
-            data: {"id": eventId});
-
         await FCMService.getAuthenticatedClient();
-        await FCMService.sendNotification(message);
+        final updatedMessage =
+            notificationMessage.message.copyWith(token: fcmToken);
+        await FCMService.sendNotification(
+            notificationMessage.copyWith(message: updatedMessage));
       } else {
         print('FCM Token not found for the assigned user.');
       }
     } catch (e) {
-      print('Error sending notification: $e');
+      print('Error in notification: $e');
     }
   }
 
-  static Map<String, Map<String, Object>> prepareNotificationBody(
-      {required String fcmToken,
-      required String title,
+  static nm.NotificationMessage prepareNotificationBody(
+      {required String title,
       required String body,
       required Map<String, String> data}) {
-    final message = {
-      "message": {
-        "token": fcmToken,
-        "notification": {"title": title, "body": body},
-        "data": data,
-      }
-    };
-    return message;
+    return nm.NotificationMessage(
+        message: nm.Message(
+            notification: nm.Notification(title: title, body: body),
+            data: data));
   }
 }
 

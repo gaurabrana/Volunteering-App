@@ -10,7 +10,6 @@ import '../DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
 import '../DataAccessLayer/VolunteeringHistoryDAO.dart';
 import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
-import '../Models/VolunteeringEventRegistration.dart';
 import '../Models/VolunteeringHistory.dart';
 import '../constants/enums.dart';
 import 'CustomWidgets/VolunteeringGraph.dart';

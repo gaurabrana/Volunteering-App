@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:googleapis/fcm/v1.dart';
 import 'package:googleapis_auth/auth_io.dart';
 
+import 'Models/Notification_Model.dart';
+
 class FCMService {
   static AutoRefreshingAuthClient? _client; // Store the client here
 
@@ -39,7 +41,7 @@ class FCMService {
 
   // Function to send notification
   static Future<void> sendNotification(
-      Map<String, dynamic> notificationMessage) async {
+      NotificationMessage notificationMessage) async {
     final client = await getAuthenticatedClient(); // Get the client
     final credentials = await loadJsonAsset();
     if (client == null) {
@@ -48,7 +50,7 @@ class FCMService {
     }
 
     final message = FirebaseCloudMessagingApi(client);
-    final request = SendMessageRequest.fromJson(notificationMessage);
+    final request = SendMessageRequest.fromJson(notificationMessage.toJson());
 
     try {
       final response = await message.projects.messages

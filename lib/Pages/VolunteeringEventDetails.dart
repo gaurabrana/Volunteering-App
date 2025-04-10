@@ -3,6 +3,7 @@ import 'package:HeartOfExperian/Pages/Attendees.dart';
 import 'package:HeartOfExperian/Pages/ColleagueProfile.dart';
 import 'package:HeartOfExperian/Pages/CustomWidgets/EventLocationMap.dart';
 import 'package:HeartOfExperian/Pages/Settings/SharedPreferences.dart';
+import 'package:HeartOfExperian/Pages/common_helper.dart';
 import 'package:HeartOfExperian/Pages/review_rating.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../DataAccessLayer/UserDAO.dart';
 import '../DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
+import '../Models/Notification_Model.dart';
 import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
 import '../Models/VolunteeringEventFavourite.dart';
@@ -302,11 +304,19 @@ class VolunteeringEventDetailsPageState
                   color: Colors.grey.shade600,
                 ),
               ),
-              Text(
-                _organiserDetails.name,
-                style: TextStyle(
-                  fontWeight: FontWeight.normal,
-                  color: Colors.grey.shade800,
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        ColleagueProfilePage(UID: _organiserDetails.UID),
+                  ));
+                },
+                child: Text(
+                  _organiserDetails.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    color: Colors.grey.shade800,
+                  ),
                 ),
               ),
             ],
@@ -355,10 +365,146 @@ class VolunteeringEventDetailsPageState
                             )),
                   );
                 },
-              )
+              ),
+              if (isCurrentUserAnOrganisation && isCurrentUserOwner)
+                TextButton(
+                  child: Row(
+                    children: [
+                      Icon(Icons.notification_add),
+                      SizedBox(
+                        width: 8,
+                      ),
+                      const Text('Notify Volunteers'),
+                    ],
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        TextEditingController inputController =
+                            TextEditingController();
+
+                        return AlertDialog(
+                          title: const Text('Send Notification'),
+                          content: TextField(
+                            controller: inputController,
+                            decoration: const InputDecoration(
+                              labelText: 'Enter your message',
+                              hintText: 'Type your notification here',
+                              border: OutlineInputBorder(),
+                            ),
+                            maxLines: 3,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop(); // Close the dialog
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                final input = inputController.text.trim();
+                                if (input.isNotEmpty) {
+                                  sendNotification(
+                                      input); // Call your function with the input
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                } else {
+                                  // Optionally, show a validation message
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please enter a message'),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Text('Send'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                )
             ],
           )
         : SizedBox();
+  }
+
+  sendNotification(String organiserMessage) async {
+    // Prepare the notification body
+    NotificationMessage message = CommonHelper.prepareNotificationBody(
+      title: "Event Notification",
+      body:
+          "Event ${widget.volunteeringEvent.name} organised by ${_organiserDetails.name} has notified all assigned volunteers. The notice is: $organiserMessage",
+      data: {"id": widget.volunteeringEvent.reference.id},
+    );
+
+    // Show progress dialog
+    int completed = 0;
+    int total = _attendees.length;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissal
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Sending Notifications"),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Sending notifications to volunteers..."),
+                  SizedBox(height: 10),
+                  LinearProgressIndicator(
+                    value: total > 0 ? completed / total : null,
+                  ),
+                  SizedBox(height: 10),
+                  Text("$completed of $total notifications sent."),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    // Iterate through attendees and send notifications
+    for (var element in _attendees) {
+      String id = element.UID;
+      try {
+        await CommonHelper.sendNotificationToAssignedUser(id, message);
+        completed++;
+      } catch (e) {
+        print('Failed to send notification to user $id: $e');
+      }
+
+      // Update dialog progress
+      (context as Element).markNeedsBuild();
+    }
+
+    // Close the dialog after completion
+    Navigator.of(context, rootNavigator: true).pop();
+
+    // Show completion message
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Notifications Sent"),
+          content: Text(
+              "Successfully sent notifications to $completed out of $total volunteers."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget buildTabBar() {
@@ -678,7 +824,9 @@ class VolunteeringEventDetailsPageState
               eventId: widget.volunteeringEvent.reference.id,
               isAssigned: false);
       VolunteeringEventRegistrationsDAO.addVolunteeringEventRegistration(
-          volunteeringEventRegistration);
+          volunteeringEventRegistration,
+          _organiserDetails.UID,
+          widget.volunteeringEvent);
       setState(() {
         isUserRegistered = true;
       });
@@ -703,7 +851,9 @@ class VolunteeringEventDetailsPageState
     try {
       VolunteeringEventRegistrationsDAO.removeVolunteeringEventRegistration(
           FirebaseAuth.instance.currentUser!.uid,
-          widget.volunteeringEvent.reference.id);
+          widget.volunteeringEvent.reference.id,
+          widget.volunteeringEvent.name,
+          _organiserDetails.UID);
       setState(() {
         isUserRegistered = false;
       });

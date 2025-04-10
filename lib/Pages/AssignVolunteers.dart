@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../DataAccessLayer/UserDAO.dart';
 import '../DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
+import '../Models/Notification_Model.dart';
 import '../Models/VolunteeringEventRegistration.dart';
 
 class Assignvolunteers extends StatefulWidget {
@@ -82,8 +83,13 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
           SnackBar(content: Text('Volunteer assigned')),
         );
 
-        await CommonHelper.sendNotificationToAssignedUser(
-            userId, widget.event.reference.id);
+        NotificationMessage message = CommonHelper.prepareNotificationBody(
+            title: "Application Approved",
+            body:
+                "Your application has been approved and assigned for ${widget.event.name}",
+            data: {"id": widget.event.reference.id});
+
+        await CommonHelper.sendNotificationToAssignedUser(userId, message);
       }
     } catch (e) {
       print('Error assigning volunteer: $e');
@@ -113,8 +119,16 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User removed successfully')),
+          SnackBar(content: Text('Volunteer removed successfully')),
         );
+
+        NotificationMessage message = CommonHelper.prepareNotificationBody(
+            title: "Assign Removal",
+            body:
+                "You have been un-assigned from your work for event: ${widget.event.name}",
+            data: {"id": widget.event.reference.id});
+
+        await CommonHelper.sendNotificationToAssignedUser(userId, message);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('No registration found for this user')),

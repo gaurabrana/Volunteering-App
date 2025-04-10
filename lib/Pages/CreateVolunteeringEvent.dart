@@ -15,7 +15,6 @@ import 'CustomWidgets/FormInputFields/EventDescriptionInputField.dart';
 import 'CustomWidgets/FormInputFields/EventLocationInputField.dart';
 import 'CustomWidgets/FormInputFields/EventTitleInputField.dart';
 import 'CustomWidgets/FormInputFields/EventWebsiteInputField.dart';
-import 'SearchVolunteering.dart';
 
 class CreateVolunteeringEventPage extends StatefulWidget {
   final Function(int) callbackOnCreateSuccess;
@@ -500,7 +499,7 @@ class _CreateVolunteeringEventFormState
     try {
       List<String> photoUrls = [];
       for (var image in _images) {
-        String? url = await PhotoDAO.uploadImageToFirebaseStorage(image!);
+        String? url = await PhotoDAO.uploadImageToFirebaseStorage(image);
         photoUrls.add(url!);
       }
 
@@ -551,7 +550,7 @@ class _CreateVolunteeringEventFormState
         content: Text('Volunteering event created successfully'),
       ));
       Navigator.pop(context);
-      widget.callbackOnCreateSuccess(2);
+      widget.callbackOnCreateSuccess(1);
     } catch (e) {
       print(e);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

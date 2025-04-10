@@ -6,7 +6,6 @@ import 'firebase_options.dart'; // Import Firebase Options
 import 'package:permission_handler/permission_handler.dart';
 
 import 'Pages/Authentication/SignIn.dart';
-import 'Pages/Leaderboard.dart';
 import 'Pages/NavBarManager.dart';
 import 'Pages/SearchVolunteering.dart';
 import 'Pages/Settings/SharedPreferences.dart';
@@ -93,7 +92,6 @@ class MainApplication extends StatelessWidget {
               mainNavigatorKey: mainNavigationKey,
               logInNavigatorKey: loginNavigationKey,
             ),
-            leaderboardPage: LeaderboardPage(),
             mainNavigatorKey: mainNavigationKey,
             logInNavigatorKey: loginNavigationKey,
           ),

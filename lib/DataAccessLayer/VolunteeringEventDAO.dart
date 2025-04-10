@@ -2,7 +2,6 @@ import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventRegistrationsDA
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../Models/VolunteeringEvent.dart';
-import '../Models/VolunteeringEventRegistration.dart';
 
 class VolunteeringEventDAO {
   static String defaultVolunteeringPhotoURL =

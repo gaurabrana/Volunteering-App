@@ -1,11 +1,10 @@
+import 'package:HeartOfExperian/helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rive/rive.dart';
 
-
 import '../fcm_manager.dart';
 import '../notification.dart';
-import 'Leaderboard.dart';
 import 'Profile.dart';
 import 'SearchVolunteering.dart';
 import 'homepage.dart';
@@ -14,8 +13,6 @@ class NavBarManager extends StatefulWidget {
   final int initialIndex;
   final SearchVolunteeringPage searchVolunteeringPage;
   final Homepage feedPage;
-  //final ProfilePage profilePage;
-  final LeaderboardPage leaderboardPage;
 
   final GlobalKey<NavigatorState> mainNavigatorKey;
   final GlobalKey<NavigatorState> logInNavigatorKey;
@@ -25,8 +22,6 @@ class NavBarManager extends StatefulWidget {
     required this.initialIndex,
     required this.searchVolunteeringPage,
     required this.feedPage,
-    //required this.profilePage,
-    required this.leaderboardPage,
     required this.mainNavigatorKey,
     required this.logInNavigatorKey,
   }) : super(key: key);
@@ -36,7 +31,7 @@ class NavBarManager extends StatefulWidget {
 }
 
 class _NavBarManagerState extends State<NavBarManager>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late List<Widget> _bodies = [];
 
   int currentActiveIndex = 0;
@@ -44,6 +39,7 @@ class _NavBarManagerState extends State<NavBarManager>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     NotificationService().requestPermissions();
     NotificationService().isAndroidPermissionGranted();
     FirebaseMessagingManager.initializeFirebaseMessaging();
@@ -51,10 +47,24 @@ class _NavBarManagerState extends State<NavBarManager>
     getBodies();
   }
 
+  @override
+  void dispose() {
+    // Unregister the observer when the widget is disposed
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Handle app lifecycle state changes
+    if (state == AppLifecycleState.detached) {
+      FCMService.closeClient();
+    }
+  }
+
   void getBodies() {
     _bodies = [
       widget.feedPage,
-      widget.leaderboardPage,
       widget.searchVolunteeringPage,
       ProfilePage(
         mainNavigatorKey: widget.mainNavigatorKey,
@@ -63,17 +73,6 @@ class _NavBarManagerState extends State<NavBarManager>
     ];
   }
 
-  // void _onItemTapped(int index) {
-  //   setState(() {
-  //     currentActiveIndex = index;
-  //
-  //     if (widget.mainNavigatorKey != null) {
-  //       widget.mainNavigatorKey.currentState?.popUntil((route) => route.isFirst);
-  //       widget.mainNavigatorKey.currentState!.push(MaterialPageRoute(builder: (_) => _bodies[currentActiveIndex]));
-  //     }
-  //
-  //   });
-  // }
   void _onItemTapped(int index) {
     setState(() {
       currentActiveIndex = index;
@@ -86,7 +85,6 @@ class _NavBarManagerState extends State<NavBarManager>
 
   List<String> assetPaths = [
     "assets/animations/home_animation.riv",
-    "assets/animations/leaderboard_animation.riv",
     "assets/animations/search_animation.riv",
     "assets/animations/profile_animation.riv",
   ];
@@ -175,12 +173,10 @@ class _NavBarManagerState extends State<NavBarManager>
                 label: index == 0
                     ? 'Home'
                     : index == 1
-                        ? 'Rank'
+                        ? 'Events'
                         : index == 2
-                            ? 'Events'
-                            : index == 3
-                                ? 'Profile'
-                                : '',
+                            ? 'Profile'
+                            : '',
               ),
             );
           },
