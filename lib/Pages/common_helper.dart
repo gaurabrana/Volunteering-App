@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../Models/VolunteeringEvent.dart';
+import '../helper.dart';
 import 'Leaderboard.dart';
 import 'NavBarManager.dart';
 import 'SearchVolunteering.dart';
@@ -60,6 +62,49 @@ class CommonHelper {
       print("failed to login with google account with error $e");
       return null;
     }
+  }
+
+  static Future<void> sendNotificationToAssignedUser(
+      String assignedUserId, String eventId) async {
+    try {
+      // Retrieve User B's FCM token from Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(assignedUserId)
+          .get();
+      String? fcmToken = userDoc['token'];
+
+      if (fcmToken != null) {
+        // Prepare the notification payload
+        Map<String, Map<String, Object>> message = prepareNotificationBody(
+            fcmToken: fcmToken,
+            title: "Volunteer Assignment",
+            body: "You have been assigned to an event",
+            data: {"id": eventId});
+
+        await FCMService.getAuthenticatedClient();
+        await FCMService.sendNotification(message);
+      } else {
+        print('FCM Token not found for the assigned user.');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
+  }
+
+  static Map<String, Map<String, Object>> prepareNotificationBody(
+      {required String fcmToken,
+      required String title,
+      required String body,
+      required Map<String, String> data}) {
+    final message = {
+      "message": {
+        "token": fcmToken,
+        "notification": {"title": title, "body": body},
+        "data": data,
+      }
+    };
+    return message;
   }
 }
 

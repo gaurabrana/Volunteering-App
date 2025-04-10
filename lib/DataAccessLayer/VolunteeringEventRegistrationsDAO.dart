@@ -80,40 +80,6 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<void> sendNotificationToAssignedUser(
-      String assignedUserId, String eventId) async {
-    try {
-      // Retrieve User B's FCM token from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(assignedUserId)
-          .get();
-      String? fcmToken = userDoc['token'];
-
-      if (fcmToken != null) {
-        // Prepare the notification payload
-        final message = {
-          "message": {
-            "token": fcmToken,
-            "notification": {
-              "title": "Volunteer Assignment",
-              "body": "You have been assigned to an event."
-            },
-            "data": {
-              "id": eventId,
-            },
-          }
-        };
-
-        await JWTHelper.loadJWTtoken(message);
-      } else {
-        print('FCM Token not found for the assigned user.');
-      }
-    } catch (e) {
-      print('Error sending notification: $e');
-    }
-  }
-
   static Future<VolunteeringEventRegistration?> getUserRegistrationStatus({
     required String userId,
     required String eventId,

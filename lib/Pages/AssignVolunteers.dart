@@ -1,6 +1,7 @@
 import 'package:HeartOfExperian/Models/UserDetails.dart';
 import 'package:HeartOfExperian/Models/VolunteeringEvent.dart';
 import 'package:HeartOfExperian/Pages/RecordVolunteering.dart';
+import 'package:HeartOfExperian/Pages/common_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -81,7 +82,7 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
           SnackBar(content: Text('Volunteer assigned')),
         );
 
-        await VolunteeringEventRegistrationsDAO.sendNotificationToAssignedUser(
+        await CommonHelper.sendNotificationToAssignedUser(
             userId, widget.event.reference.id);
       }
     } catch (e) {
