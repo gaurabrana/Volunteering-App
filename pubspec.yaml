@@ -53,11 +53,17 @@ dependencies:
   confetti:
   firebase_data_connect: ^0.1.4
   google_sign_in: ^6.3.0
+  flutter_local_notifications: ^19.0.0
+  http: ^1.3.0
+  googleapis: ^14.0.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.13
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   web: 1.1.0
+  firebase_messaging: ^15.2.5
+  permission_handler: ^11.3.1
   # web: ^1.1.0
 
 dev_dependencies:
@@ -103,6 +109,7 @@ flutter:
     - assets/images/badges/50_hours.png
     - assets/images/badges/100_hours.png
     - assets/images/badges/locked.png
+    - assets/volunteer-impact.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

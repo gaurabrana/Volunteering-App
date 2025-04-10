@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:rive/rive.dart';
 
 
+import '../fcm_manager.dart';
+import '../notification.dart';
 import 'Leaderboard.dart';
 import 'Profile.dart';
-import 'RecordVolunteering.dart';
 import 'SearchVolunteering.dart';
 import 'homepage.dart';
 
@@ -43,6 +44,9 @@ class _NavBarManagerState extends State<NavBarManager>
   @override
   void initState() {
     super.initState();
+    NotificationService().requestPermissions();
+    NotificationService().isAndroidPermissionGranted();
+    FirebaseMessagingManager.initializeFirebaseMessaging();
     currentActiveIndex = widget.initialIndex;
     getBodies();
   }

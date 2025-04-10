@@ -3,28 +3,36 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'Pages/homepage.dart';
 import 'firebase_options.dart'; // Import Firebase Options
+import 'package:permission_handler/permission_handler.dart';
 
 import 'Pages/Authentication/SignIn.dart';
 import 'Pages/Leaderboard.dart';
 import 'Pages/NavBarManager.dart';
-import 'Pages/RecordVolunteering.dart';
 import 'Pages/SearchVolunteering.dart';
 import 'Pages/Settings/SharedPreferences.dart';
+import 'notification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // ✅ Use FirebaseOptions for initialization
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
+  NotificationService.initilizeNotification();
+  await Permission.notification.isDenied.then((value) {
+    if (value) {
+      Permission.notification.request();
+    }
+  });
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final GlobalKey<NavigatorState> mainNavigationKey = GlobalKey<NavigatorState>();
-  final GlobalKey<NavigatorState> loginNavigationKey = GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> mainNavigationKey =
+      GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> loginNavigationKey =
+      GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +44,18 @@ class MyApp extends StatelessWidget {
         future: SignInSharedPreferences.isSignedIn(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator()); // ✅ Wrapped in Center
+            return Center(
+                child: CircularProgressIndicator()); // ✅ Wrapped in Center
           }
           final bool isAuthenticated = snapshot.data ?? false;
           if (isAuthenticated) {
-            return MainApplication(loginNavigationKey: loginNavigationKey, mainNavigationKey: mainNavigationKey);
+            return MainApplication(
+                loginNavigationKey: loginNavigationKey,
+                mainNavigationKey: mainNavigationKey);
           } else {
-            return LoginPage(loginNavigationKey: loginNavigationKey, mainNavigationKey: mainNavigationKey);
+            return LoginPage(
+                loginNavigationKey: loginNavigationKey,
+                mainNavigationKey: mainNavigationKey);
           }
         },
       ),
@@ -61,7 +74,11 @@ class MainApplication extends StatelessWidget {
   final GlobalKey<NavigatorState> mainNavigationKey;
   final GlobalKey<NavigatorState> loginNavigationKey;
 
-  const MainApplication({Key? key, required this.mainNavigationKey, required this.loginNavigationKey}) : super(key: key);
+  const MainApplication(
+      {Key? key,
+      required this.mainNavigationKey,
+      required this.loginNavigationKey})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -90,12 +107,15 @@ class LoginPage extends StatelessWidget {
   final GlobalKey<NavigatorState> loginNavigationKey;
   final GlobalKey<NavigatorState> mainNavigationKey;
 
-  const LoginPage({Key? key, required this.loginNavigationKey, required this.mainNavigationKey}) : super(key: key);
+  const LoginPage(
+      {Key? key,
+      required this.loginNavigationKey,
+      required this.mainNavigationKey})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Navigator(
-      
       key: loginNavigationKey,
       onGenerateRoute: (settings) {
         return MaterialPageRoute(
@@ -108,4 +128,3 @@ class LoginPage extends StatelessWidget {
     );
   }
 }
-

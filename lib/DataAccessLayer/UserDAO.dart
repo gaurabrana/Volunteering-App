@@ -155,4 +155,27 @@ class UserDAO {
       throw error;
     }
   }
+
+  static Future<void> updateUserToken(String userId, String token) async {
+    try {
+      // Query Firestore for the user's document
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('UID', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print("No user found with the given UID.");
+        return;
+      }
+
+      // Update the token field for the user's document
+      for (var doc in querySnapshot.docs) {
+        await doc.reference.update({'token': token});
+        print("Token updated for user: ${doc.id}");
+      }
+    } catch (e) {
+      print("Error updating user token: $e");
+    }
+  }
 }

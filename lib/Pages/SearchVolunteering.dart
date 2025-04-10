@@ -1,7 +1,10 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:HeartOfExperian/Models/VolunteeringEvent.dart';
 import 'package:HeartOfExperian/constants/enums.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 
 import '../DataAccessLayer/UserDAO.dart';
@@ -409,7 +412,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "${DateFormat('dd/MM/yy').format(_selectedStartDate!)}",
+              "${DateFormat('dd/MM/yy').format(_selectedStartDate)}",
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade700,
@@ -438,7 +441,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "${DateFormat('dd/MM/yy').format(_selectedEndDate!)}",
+              "${DateFormat('dd/MM/yy').format(_selectedEndDate)}",
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade700,
@@ -510,21 +513,29 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
     );
   }
 
-  void filterEvents(String query) {
+  void filterEvents(String query) async {
+    List<Location> locations = await locationFromAddress(_selectedLocation);
     List<VolunteeringEvent> filteredList = _volunteeringEvents.where((event) {
+      bool locationFound = locations
+          .where((element) =>
+              element.longitude == event.longitude &&
+              element.latitude == event.latitude)
+          .isNotEmpty;
+
       bool matchesQuery =
           event.name.toLowerCase().contains(query.toLowerCase());
       bool matchesType = _selectedType == 'Any' || event.type == _selectedType;
 
       bool matchesLocation = _selectedLocation.isEmpty ||
-          event.location
-              .toLowerCase()
-              .contains(_selectedLocation.toLowerCase());
+          (event.location
+                  .toLowerCase()
+                  .contains(_selectedLocation.toLowerCase()) ||
+              locationFound);
 
       bool matchesDateRange = _selectedStartDate == null ||
           _selectedEndDate == null ||
-          (event.date.isAfter(_selectedStartDate!) &&
-              event.date.isBefore(_selectedEndDate!));
+          (event.date.isAfter(_selectedStartDate) &&
+              event.date.isBefore(_selectedEndDate));
 
       return matchesQuery && matchesType && matchesLocation && matchesDateRange;
     }).toList();

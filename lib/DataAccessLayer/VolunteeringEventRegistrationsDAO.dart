@@ -1,4 +1,12 @@
+import 'dart:convert';
+
+import 'package:HeartOfExperian/helper.dart';
+import 'package:HeartOfExperian/notification.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:googleapis_auth/auth.dart';
+import 'package:http/http.dart' as http;
 
 import '../Models/VolunteeringEventRegistration.dart';
 
@@ -38,7 +46,8 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<List<VolunteeringEventRegistration>> getAllEventIdsForUser(String userId) async {
+  static Future<List<VolunteeringEventRegistration>> getAllEventIdsForUser(
+      String userId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('volunteeringEventRegistrations')
@@ -54,7 +63,8 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<List<VolunteeringEventRegistration>> getAllUserIdsForEvent(String eventId) async {
+  static Future<List<VolunteeringEventRegistration>> getAllUserIdsForEvent(
+      String eventId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('volunteeringEventRegistrations')
@@ -70,20 +80,37 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<void> assignVolunteerToEvent(
-      String docId, String startDate, String endDate) async {
+  static Future<void> sendNotificationToAssignedUser(
+      String assignedUserId, String eventId) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('volunteeringEventRegistrations')
-          .doc(docId)
-          .update({
-        'isAssigned': true,
-        'startDate': startDate,
-        'endDate': endDate,
-        'lastUpdated': FieldValue.serverTimestamp(), // optional
-      });
+      // Retrieve User B's FCM token from Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(assignedUserId)
+          .get();
+      String? fcmToken = userDoc['token'];
+
+      if (fcmToken != null) {
+        // Prepare the notification payload
+        final message = {
+          "message": {
+            "token": fcmToken,
+            "notification": {
+              "title": "Volunteer Assignment",
+              "body": "You have been assigned to an event."
+            },
+            "data": {
+              "id": eventId,
+            },
+          }
+        };
+
+        await JWTHelper.loadJWTtoken(message);
+      } else {
+        print('FCM Token not found for the assigned user.');
+      }
     } catch (e) {
-      print('Error assigning volunteer to the event: $e');
+      print('Error sending notification: $e');
     }
   }
 
@@ -105,7 +132,9 @@ class VolunteeringEventRegistrationsDAO {
         return VolunteeringEventRegistration(
           userId: doc['userId'],
           eventId: doc['eventId'],
-          isAssigned: data.containsKey('isAssigned') ? doc['isAssigned'] ?? false : null,
+          isAssigned: data.containsKey('isAssigned')
+              ? doc['isAssigned'] ?? false
+              : null,
           assignedStartDate: data.containsKey('assignedStartDate') &&
                   data['assignedStartDate'] != null
               ? (data['assignedStartDate'] as Timestamp).toDate()
