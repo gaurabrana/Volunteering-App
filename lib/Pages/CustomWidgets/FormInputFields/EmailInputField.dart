@@ -60,7 +60,7 @@ class EmailInputFieldState extends State<EmailInputField> {
               Icons.email,
               color: Colors.grey,
             ),
-            suffixText: UserDAO.defaultDomain,
+            suffixText: UserDAO().defaultDomain,
             filled: true,
             fillColor: widget.isReadOnly != null && widget.isReadOnly! ? const Color.fromARGB(255, 228, 221, 221) : Colors.white,
             border: OutlineInputBorder(
@@ -84,7 +84,7 @@ class EmailInputFieldState extends State<EmailInputField> {
               return 'Please enter an email';
             }
             if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                .hasMatch(value + UserDAO.defaultDomain)) {
+                .hasMatch(value + UserDAO().defaultDomain)) {
               return 'Please enter a valid email address';
             }
             return null;

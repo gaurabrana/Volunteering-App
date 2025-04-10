@@ -144,16 +144,16 @@ class _SignInPageState extends State<SignInPage> {
 
   Future<void> saveAndRedirect(User? user) async {
     if (user != null) {
-      UserDetails? userDetails = await UserDAO.getUserDetails(user.uid);
+      UserDetails? userDetails = await UserDAO().getUserDetails(user.uid);
       if (userDetails == null) {
-        await UserDAO.storeUserDetails(user.uid, user.displayName ?? 'user',
+        await UserDAO().storeUserDetails(user.uid, user.displayName ?? 'user',
             user.email ?? 'email', UserRole.user.name,
             photoUrl: user.photoURL);
       }
-      SignInSharedPreferences.setSignedIn(true);
-      UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
+      SignInSharedPreferences().setSignedIn(true);
+      UserDetails? userDetail = await UserDAO().getUserDetails(user.uid);
       if (userDetail != null) {
-        SignInSharedPreferences.setCurrentUserDetails(userDetail);
+        SignInSharedPreferences().setCurrentUserDetails(userDetail);
       }
       redirectToMainApp(context);
     }
@@ -181,7 +181,7 @@ Future<void> logOutUser(
   GlobalKey<NavigatorState> loginNavigationKey,
   GlobalKey<NavigatorState> mainNavigatorKey,
 ) async {
-  SignInSharedPreferences.setSignedIn(false);
+  SignInSharedPreferences().setSignedIn(false);
 
   if (_auth.currentUser != null) {
     final String email = _auth.currentUser!.email ?? '';
@@ -197,7 +197,7 @@ Future<void> logOutUser(
     }
 
     // Clear locally stored user details
-    await SignInSharedPreferences.clearCurrentUserDetails();
+    await SignInSharedPreferences().clearCurrentUserDetails();
 
     // Show confirmation
     ScaffoldMessenger.of(context).showSnackBar(
@@ -377,7 +377,7 @@ class _LogInFormState extends State<_LogInForm> {
 
     try {
       final userCredential = await _auth.signInWithEmailAndPassword(
-        email: (_emailController.text + UserDAO.defaultDomain),
+        email: (_emailController.text + UserDAO().defaultDomain),
         password: _passwordController.text,
       );
 
@@ -424,10 +424,10 @@ class _LogInFormState extends State<_LogInForm> {
         _userEmail = user.email as String;
         _loginMessage = '';
       });
-      SignInSharedPreferences.setSignedIn(true);
-      UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
+      SignInSharedPreferences().setSignedIn(true);
+      UserDetails? userDetail = await UserDAO().getUserDetails(user.uid);
       if (userDetail != null) {
-        SignInSharedPreferences.setCurrentUserDetails(userDetail);
+        SignInSharedPreferences().setCurrentUserDetails(userDetail);
       }
       redirectToMainApp(context);
     } else {

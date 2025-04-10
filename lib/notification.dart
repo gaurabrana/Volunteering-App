@@ -203,7 +203,7 @@ class NotificationService {
       final id = decodedData['id'];
       if (id != null) {
         VolunteeringEvent? event =
-            await VolunteeringEventDAO.getVolunteeringEvent(id);
+            await VolunteeringEventDAO().getVolunteeringEvent(id);
         if (event != null) {
           Navigator.of(Get.context!).push(MaterialPageRoute(
             builder: (context) => VolunteeringEventDetailsPage(

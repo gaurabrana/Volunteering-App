@@ -59,7 +59,7 @@ class VolunteeringHistoryDAO {
       return 0;
     }
     try {
-      List<UserDetails?> users = await UserDAO.getAllUsers();
+      List<UserDetails?> users = await UserDAO().getAllUsers();
 
       Map<String, int> volunteeringHoursMap = {};
       for (UserDetails? user in users) {

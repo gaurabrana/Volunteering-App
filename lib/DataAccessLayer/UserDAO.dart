@@ -4,9 +4,9 @@ import '../Models/UserDetails.dart';
 import 'PhotoDAO.dart';
 
 class UserDAO {
-  static const String defaultDomain = "@experian.com";
+  String defaultDomain = "@experian.com";
 
-  static Future<void> storeUserDetails(
+  Future<void> storeUserDetails(
       String userId, String userName, String email, String role,
       {String? photoUrl}) async {
     try {
@@ -22,7 +22,7 @@ class UserDAO {
     }
   }
 
-  static Future<void> storeOrganisationDetails({
+  Future<void> storeOrganisationDetails({
     required String userId,
     required String mission,
     required String activities,
@@ -52,8 +52,7 @@ class UserDAO {
   }
 
   // Method to fetch organisation details by userId
-  static Future<Map<String, dynamic>?> fetchOrganisationDetails(
-      String userId) async {
+  Future<Map<String, dynamic>?> fetchOrganisationDetails(String userId) async {
     try {
       // Get the document reference for the given userId
       DocumentSnapshot snapshot = await FirebaseFirestore.instance
@@ -75,7 +74,7 @@ class UserDAO {
     }
   }
 
-  static Future<UserDetails?> getUserDetails(String? userId) async {
+  Future<UserDetails?> getUserDetails(String? userId) async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('UID', isEqualTo: userId)
@@ -93,22 +92,7 @@ class UserDAO {
     return users.isNotEmpty ? users.first : null;
   }
 
-  static Future<List<String>> getAllUserIds() async {
-    List<String> uids = [];
-    try {
-      final querySnapshot =
-          await FirebaseFirestore.instance.collection('users').get();
-      querySnapshot.docs.forEach((doc) {
-        uids.add(doc.id);
-      });
-    } catch (e) {
-      //print('Error getting user UIDs: $e');
-    }
-
-    return uids;
-  }
-
-  static Future<List<UserDetails?>> getAllUsers() async {
+  Future<List<UserDetails?>> getAllUsers() async {
     final querySnapshot =
         await FirebaseFirestore.instance.collection('users').get();
     return querySnapshot.docs
@@ -116,38 +100,15 @@ class UserDAO {
         .toList();
   }
 
-  static Future<String> getName(String? userId) async {
-    if (userId == null) {
-      return "";
-    }
+  Future<void> updateName(UserDetails user, String newName) async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('UID', isEqualTo: userId)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        DocumentSnapshot userDoc = querySnapshot.docs.first;
-        if (userDoc.exists && userDoc['name'] != null) {
-          return userDoc['name'];
-        }
-      }
-      return "";
-    } catch (e) {
-      //print('Error retrieving name from Firestore: $e');
-      return "";
-    }
-  }
-
-  static Future<void> updateName(UserDetails user, String newName) async {
-    try {
-      await user.reference.update({'name': newName});
+      await user.reference?.update({'name': newName});
     } catch (error) {
       //print("Error updating user's name: $error");
     }
   }
 
-  static Future<void> deleteUser(String userId) async {
+  Future<void> deleteUser(String userId) async {
     try {
       await FirebaseFirestore.instance.collection('users').doc(userId).delete();
     } catch (error) {
@@ -156,7 +117,7 @@ class UserDAO {
     }
   }
 
-  static Future<void> updateUserToken(String userId, String token) async {
+  Future<void> updateUserToken(String userId, String token) async {
     try {
       // Query Firestore for the user's document
       final querySnapshot = await FirebaseFirestore.instance
@@ -179,7 +140,7 @@ class UserDAO {
     }
   }
 
-  static Future<String?> getFCMToken(String userId) async {
+  Future<String?> getFCMToken(String userId) async {
     // Retrieve User FCM token from Firestore
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance

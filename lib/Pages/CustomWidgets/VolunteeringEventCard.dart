@@ -36,7 +36,8 @@ class VolunteeringEventCardState extends State<VolunteeringEventCard> {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => VolunteeringEventDetailsPage(volunteeringEvent: widget.event),
+          builder: (context) =>
+              VolunteeringEventDetailsPage(volunteeringEvent: widget.event),
         ));
       },
       child: Padding(
@@ -126,7 +127,8 @@ class VolunteeringEventCardState extends State<VolunteeringEventCard> {
                       ),
                       Row(
                         children: [
-                          Icon(Icons.location_on_rounded, color: Colors.grey.shade500, size: 15),
+                          Icon(Icons.location_on_rounded,
+                              color: Colors.grey.shade500, size: 15),
                           SizedBox(width: 5),
                           Container(
                             constraints: BoxConstraints(maxWidth: 190),
@@ -144,7 +146,8 @@ class VolunteeringEventCardState extends State<VolunteeringEventCard> {
                       ),
                       Row(
                         children: [
-                          Icon(Icons.calendar_month_rounded, color: Colors.grey.shade500, size: 15),
+                          Icon(Icons.calendar_month_rounded,
+                              color: Colors.grey.shade500, size: 15),
                           SizedBox(width: 5),
                           Text(
                             "${DateFormat('dd/MM/yy').format(widget.date)}",
@@ -174,20 +177,26 @@ class VolunteeringEventCardState extends State<VolunteeringEventCard> {
         });
         if (widget.isFavourite) {
           VolunteeringEventFavourite volunteeringEventFavourite =
-              VolunteeringEventFavourite(userId: FirebaseAuth.instance.currentUser!.uid, eventId: widget.event.reference.id);
-          VolunteeringEventFavouritesDAO.addVolunteeringEventFavourite(volunteeringEventFavourite);
+              VolunteeringEventFavourite(
+                  userId: FirebaseAuth.instance.currentUser!.uid,
+                  eventId: widget.event.reference!.id);
+          VolunteeringEventFavouritesDAO.addVolunteeringEventFavourite(
+              volunteeringEventFavourite);
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Added to favourites successfully'),
           ));
         } else {
-          VolunteeringEventFavouritesDAO.removeVolunteeringEventFavourite(FirebaseAuth.instance.currentUser!.uid, widget.event.reference.id);
+          VolunteeringEventFavouritesDAO.removeVolunteeringEventFavourite(
+              FirebaseAuth.instance.currentUser!.uid,
+              widget.event.reference!.id);
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Removed from favourites successfully'),
           ));
         }
       },
       icon: widget.isFavourite
-          ? const FaIcon(FontAwesomeIcons.solidHeart, color: Colors.red, size: 25)
+          ? const FaIcon(FontAwesomeIcons.solidHeart,
+              color: Colors.red, size: 25)
           : const FaIcon(FontAwesomeIcons.heart, color: Colors.red, size: 25),
     );
   }

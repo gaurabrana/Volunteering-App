@@ -55,7 +55,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
     initialiseData();
     try {
       List<VolunteeringEvent>? volunteeringEvents =
-          await VolunteeringEventDAO.getAllFutureVolunteeringEvents();
+          await VolunteeringEventDAO().getAllFutureVolunteeringEvents();
       setState(() {
         if (volunteeringEvents != null) {
           _volunteeringEvents = volunteeringEvents;
@@ -75,7 +75,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
         return;
       }
 
-      UserDetails? currentUser = await UserDAO.getUserDetails(user.uid);
+      UserDetails? currentUser = await UserDAO().getUserDetails(user.uid);
       if (currentUser != null) {
         setState(() {
           userRole = currentUser.role;
@@ -484,7 +484,7 @@ class SearchVolunteeringPageState extends State<SearchVolunteeringPage> {
       try {
         bool favourite =
             await VolunteeringEventFavouritesDAO.isEventFavouritedByUser(
-                FirebaseAuth.instance.currentUser!.uid, event.reference.id);
+                FirebaseAuth.instance.currentUser!.uid, event.reference!.id);
         return favourite;
       } catch (e) {
         //print('Error fetching favourite: $e');

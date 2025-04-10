@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: mainNavigationKey,
       home: FutureBuilder<bool>(
-        future: SignInSharedPreferences.isSignedIn(),
+        future: SignInSharedPreferences().isSignedIn(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(

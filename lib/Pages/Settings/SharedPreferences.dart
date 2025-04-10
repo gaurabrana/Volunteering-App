@@ -4,25 +4,25 @@ import 'package:HeartOfExperian/Models/UserDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInSharedPreferences {
-  static Future<bool> isSignedIn() async {
+  Future<bool> isSignedIn() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isSignedIn') ?? false;
   }
 
-  static Future<void> setSignedIn(bool value) async {
+  Future<void> setSignedIn(bool value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isSignedIn', value);
   }
 
   /// Save user details to SharedPreferences
-  static Future<void> setCurrentUserDetails(UserDetails details) async {
+  Future<void> setCurrentUserDetails(UserDetails details) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String jsonString = jsonEncode(details.toJson());
     await prefs.setString('userDetails', jsonString);
   }
 
   /// Get user details from SharedPreferences
-  static Future<UserDetails?> getCurrentUserDetails() async {
+  Future<UserDetails?> getCurrentUserDetails() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? jsonString = prefs.getString('userDetails');
 
@@ -35,7 +35,7 @@ class SignInSharedPreferences {
   }
 
   /// Clear stored user details on logout
-  static Future<void> clearCurrentUserDetails() async {
+  Future<void> clearCurrentUserDetails() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('userDetails');
   }

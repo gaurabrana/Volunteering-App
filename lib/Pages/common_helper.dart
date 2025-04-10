@@ -67,7 +67,7 @@ class CommonHelper {
   static Future<void> sendNotificationToAssignedUser(
       String assignedUserId, nm.NotificationMessage notificationMessage) async {
     try {
-      String? fcmToken = await UserDAO.getFCMToken(assignedUserId);
+      String? fcmToken = await UserDAO().getFCMToken(assignedUserId);
 
       if (fcmToken != null) {
         await FCMService.getAuthenticatedClient();

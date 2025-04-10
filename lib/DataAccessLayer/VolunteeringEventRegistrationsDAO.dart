@@ -56,7 +56,7 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<List<VolunteeringEventRegistration>> getAllEventIdsForUser(
+  Future<List<VolunteeringEventRegistration>> getAllEventIdsForUser(
       String userId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -73,7 +73,7 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<List<VolunteeringEventRegistration>> getAllUserIdsForEvent(
+  Future<List<VolunteeringEventRegistration>> getAllUserIdsForEvent(
       String eventId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -90,7 +90,7 @@ class VolunteeringEventRegistrationsDAO {
     }
   }
 
-  static Future<VolunteeringEventRegistration?> getUserRegistrationStatus({
+  Future<VolunteeringEventRegistration?> getUserRegistrationStatus({
     required String userId,
     required String eventId,
   }) async {

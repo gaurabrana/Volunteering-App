@@ -66,10 +66,10 @@ class VolunteeringEventDetailsPageState
   Future<void> fetchOrganiserDetails() async {
     try {
       UserDetails? userDetails =
-          await UserDAO.getUserDetails(widget.volunteeringEvent.organiserUID);
+          await UserDAO().getUserDetails(widget.volunteeringEvent.organiserUID);
 
       UserDetails? detail =
-          await SignInSharedPreferences.getCurrentUserDetails();
+          await SignInSharedPreferences().getCurrentUserDetails();
       if (detail != null) {
         isCurrentUserAnOrganisation = detail.role == UserRole.organisation;
       }
@@ -88,8 +88,8 @@ class VolunteeringEventDetailsPageState
     try {
       List<UserDetails> attendees = [];
       attendeesList =
-          await VolunteeringEventRegistrationsDAO.getAllUserIdsForEvent(
-              widget.volunteeringEvent.reference.id);
+          await VolunteeringEventRegistrationsDAO().getAllUserIdsForEvent(
+              widget.volunteeringEvent.reference!.id);
       List<String> attendeeIds = attendeesList.map((e) => e.userId).toList();
       if (attendeeIds.contains(FirebaseAuth.instance.currentUser!.uid)) {
         setState(() {
@@ -104,7 +104,7 @@ class VolunteeringEventDetailsPageState
       }
 
       for (var id in attendeeIds) {
-        UserDetails? attendee = await UserDAO.getUserDetails(id);
+        UserDetails? attendee = await UserDAO().getUserDetails(id);
         if (attendee != null) {
           attendees.add(attendee);
         }
@@ -123,7 +123,7 @@ class VolunteeringEventDetailsPageState
       bool favourite =
           await VolunteeringEventFavouritesDAO.isEventFavouritedByUser(
               FirebaseAuth.instance.currentUser!.uid,
-              widget.volunteeringEvent.reference.id);
+              widget.volunteeringEvent.reference!.id);
 
       setState(() {
         isFavourite = favourite;
@@ -217,7 +217,7 @@ class VolunteeringEventDetailsPageState
                 VolunteeringEventFavourite volunteeringEventFavourite =
                     VolunteeringEventFavourite(
                         userId: FirebaseAuth.instance.currentUser!.uid,
-                        eventId: widget.volunteeringEvent.reference.id);
+                        eventId: widget.volunteeringEvent.reference!.id);
                 VolunteeringEventFavouritesDAO.addVolunteeringEventFavourite(
                     volunteeringEventFavourite);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -226,7 +226,7 @@ class VolunteeringEventDetailsPageState
               } else {
                 VolunteeringEventFavouritesDAO.removeVolunteeringEventFavourite(
                     FirebaseAuth.instance.currentUser!.uid,
-                    widget.volunteeringEvent.reference.id);
+                    widget.volunteeringEvent.reference!.id);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Text('Removed from favourites successfully'),
                 ));
@@ -438,7 +438,7 @@ class VolunteeringEventDetailsPageState
       title: "Event Notification",
       body:
           "Event ${widget.volunteeringEvent.name} organised by ${_organiserDetails.name} has notified all assigned volunteers. The notice is: $organiserMessage",
-      data: {"id": widget.volunteeringEvent.reference.id},
+      data: {"id": widget.volunteeringEvent.reference!.id},
     );
 
     // Show progress dialog
@@ -776,7 +776,7 @@ class VolunteeringEventDetailsPageState
                                 MaterialPageRoute(
                                     builder: (context) => ReviewAndRating(
                                           eventId: widget
-                                              .volunteeringEvent.reference.id,
+                                              .volunteeringEvent.reference!.id,
                                           eventName:
                                               widget.volunteeringEvent.name,
                                         )),
@@ -821,7 +821,7 @@ class VolunteeringEventDetailsPageState
       VolunteeringEventRegistration volunteeringEventRegistration =
           VolunteeringEventRegistration(
               userId: FirebaseAuth.instance.currentUser!.uid,
-              eventId: widget.volunteeringEvent.reference.id,
+              eventId: widget.volunteeringEvent.reference!.id,
               isAssigned: false);
       VolunteeringEventRegistrationsDAO.addVolunteeringEventRegistration(
           volunteeringEventRegistration,
@@ -851,7 +851,7 @@ class VolunteeringEventDetailsPageState
     try {
       VolunteeringEventRegistrationsDAO.removeVolunteeringEventRegistration(
           FirebaseAuth.instance.currentUser!.uid,
-          widget.volunteeringEvent.reference.id,
+          widget.volunteeringEvent.reference!.id,
           widget.volunteeringEvent.name,
           _organiserDetails.UID);
       setState(() {

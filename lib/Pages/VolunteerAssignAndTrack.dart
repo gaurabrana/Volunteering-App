@@ -53,7 +53,7 @@ class _VolunteerAssignandTrackState extends State<VolunteerAssignandTrack> {
   }
 
   void getOrganiserEvents() async {
-    var events = await VolunteeringEventDAO.getEventsByOrganiserUID(
+    var events = await VolunteeringEventDAO().getEventsByOrganiserUID(
         FirebaseAuth.instance.currentUser!.uid);
     if (events != null) {
       setState(() {

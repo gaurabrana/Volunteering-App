@@ -35,11 +35,12 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
 
   Future<void> loadUserIds() async {
     registrations =
-        await VolunteeringEventRegistrationsDAO.getAllUserIdsForEvent(
-            widget.event.reference.id);
+        await VolunteeringEventRegistrationsDAO().getAllUserIdsForEvent(
+            widget.event.reference!.id);
     for (var registration in registrations) {
       assignedUsers[registration.userId] = registration.isAssigned;
-      UserDetails? attendee = await UserDAO.getUserDetails(registration.userId);
+      UserDetails? attendee =
+          await UserDAO().getUserDetails(registration.userId);
       if (attendee != null) {
         userInfo[attendee.UID] = attendee;
       }
@@ -64,7 +65,7 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
       final query = await FirebaseFirestore.instance
           .collection('volunteeringEventRegistrations')
           .where('userId', isEqualTo: userId)
-          .where('eventId', isEqualTo: widget.event.reference.id)
+          .where('eventId', isEqualTo: widget.event.reference!.id)
           .get();
 
       if (query.docs.isNotEmpty) {
@@ -87,7 +88,7 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
             title: "Application Approved",
             body:
                 "Your application has been approved and assigned for ${widget.event.name}",
-            data: {"id": widget.event.reference.id});
+            data: {"id": widget.event.reference!.id});
 
         await CommonHelper.sendNotificationToAssignedUser(userId, message);
       }
@@ -101,7 +102,7 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
       final query = await FirebaseFirestore.instance
           .collection('volunteeringEventRegistrations')
           .where('userId', isEqualTo: userId)
-          .where('eventId', isEqualTo: widget.event.reference.id)
+          .where('eventId', isEqualTo: widget.event.reference!.id)
           .get();
 
       if (query.docs.isNotEmpty) {
@@ -126,7 +127,7 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
             title: "Assign Removal",
             body:
                 "You have been un-assigned from your work for event: ${widget.event.name}",
-            data: {"id": widget.event.reference.id});
+            data: {"id": widget.event.reference!.id});
 
         await CommonHelper.sendNotificationToAssignedUser(userId, message);
       } else {
@@ -268,7 +269,7 @@ class _AssignvolunteersState extends State<Assignvolunteers> {
                                   Navigator.of(context).push(MaterialPageRoute(
                                       builder: (context) =>
                                           RecordVolunteeringPage(
-                                            eventId: widget.event.reference.id,
+                                            eventId: widget.event.reference!.id,
                                             userId: user.UID,
                                             event: widget.event,
                                             registration: registration,

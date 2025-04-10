@@ -203,20 +203,20 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
               password: _passwordController.text))
           .user;
       if (user != null) {
-        await UserDAO.storeUserDetails(
+        await UserDAO().storeUserDetails(
           user.uid,
           _userNameController.text,
           ("${_emailController.text}@experian.com"),
           _userRole,
         );
-        UserDetails? userDetail = await UserDAO.getUserDetails(user.uid);
+        UserDetails? userDetail = await UserDAO().getUserDetails(user.uid);
         if (userDetail != null) {
-          SignInSharedPreferences.setCurrentUserDetails(userDetail);
+          SignInSharedPreferences().setCurrentUserDetails(userDetail);
         }
         setState(() {
           _userEmail = user.email as String;
           _registrationErrorMessage = "";
-          SignInSharedPreferences.setSignedIn(true);
+          SignInSharedPreferences().setSignedIn(true);
           getUserToUploadProfilePhoto(context);
         });
       } else {

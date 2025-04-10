@@ -7,7 +7,7 @@ class UserDetails {
   final String UID;
   final String profilePhotoUrl;
   final UserRole role;
-  final DocumentReference reference;
+  final DocumentReference? reference;
 
   UserDetails.fromMap(Map<String, dynamic> map, {required this.reference})
       : assert(map['name'] != null),
@@ -51,7 +51,7 @@ class UserDetails {
       'UID': UID,
       'profilePhotoUrl': profilePhotoUrl,
       'role': role.name,
-      'reference': reference.path, // <- just the path string
+      'reference': reference?.path, // <- just the path string
     };
   }
 
@@ -63,6 +63,16 @@ class UserDetails {
     required this.profilePhotoUrl,
     required this.role,
     required this.reference,
+  });
+
+  // Public constructor to allow direct instantiation
+  UserDetails({
+    required this.name,
+    required this.email,
+    required this.UID,
+    required this.profilePhotoUrl,
+    required this.role,
+    this.reference,
   });
 
   @override

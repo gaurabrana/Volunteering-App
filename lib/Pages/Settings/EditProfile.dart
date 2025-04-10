@@ -102,7 +102,7 @@ class EditProfilePageState extends State<EditProfilePage> {
   Future<void> _fetchUserDetails() async {
     try {
       UserDetails? userDetails =
-          await SignInSharedPreferences.getCurrentUserDetails();
+          await SignInSharedPreferences().getCurrentUserDetails();
       setState(() {
         _userDetails = userDetails;
         _isLoading = false; // Data fetched, no longer loading
@@ -119,7 +119,7 @@ class EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _fetchOrganisationDetails(String userId) async {
-    var details = await UserDAO.fetchOrganisationDetails(userId);
+    var details = await UserDAO().fetchOrganisationDetails(userId);
     _missionController.text = details!['mission'];
     _activitiesController.text = details['activities'];
     _projectsController.text = details['completedProjects'];
@@ -130,7 +130,7 @@ class EditProfilePageState extends State<EditProfilePage> {
   Future<void> _fetchNameAndEmail() async {
     try {
       UserDetails? userDetails =
-          await SignInSharedPreferences.getCurrentUserDetails();
+          await SignInSharedPreferences().getCurrentUserDetails();
       setState(() {
         if (userDetails?.name != null) {
           _currentName = userDetails!.name;
@@ -340,11 +340,11 @@ class EditProfilePageState extends State<EditProfilePage> {
         // }
         if (_nameController.text != _currentName) {
           if (_userDetails != null) {
-            await UserDAO.updateName(_userDetails!, _nameController.text);
+            await UserDAO().updateName(_userDetails!, _nameController.text);
             UserDetails? userDetailsUpdated =
-                await UserDAO.getUserDetails(user.uid);
+                await UserDAO().getUserDetails(user.uid);
             if (userDetailsUpdated != null) {
-              SignInSharedPreferences.setCurrentUserDetails(userDetailsUpdated);
+              SignInSharedPreferences().setCurrentUserDetails(userDetailsUpdated);
             }
           } else {
             //print('Error updating details: No user found.');
@@ -353,7 +353,7 @@ class EditProfilePageState extends State<EditProfilePage> {
 
         if (_userDetails != null &&
             _userDetails!.role == UserRole.organisation) {
-          await UserDAO.storeOrganisationDetails(
+          await UserDAO().storeOrganisationDetails(
               userId: user.uid,
               mission: _missionController.text,
               activities: _activitiesController.text,

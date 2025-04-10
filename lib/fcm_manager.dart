@@ -10,7 +10,7 @@ class FirebaseMessagingManager {
   static Future<void> initializeFirebaseMessaging() async {
     String? fcmToken = await FirebaseMessaging.instance.getToken();
     if (fcmToken != null) {
-      await UserDAO.updateUserToken(
+      await UserDAO().updateUserToken(
           FirebaseAuth.instance.currentUser!.uid, fcmToken);
     }
 
@@ -28,7 +28,7 @@ class FirebaseMessagingManager {
     // Listen for token refresh
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       log('FCM Token (Refreshed): $newToken');
-      await UserDAO.updateUserToken(
+      await UserDAO().updateUserToken(
           FirebaseAuth.instance.currentUser!.uid, newToken);
     });
 

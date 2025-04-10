@@ -45,7 +45,7 @@ class HomepageState extends State<Homepage> {
   Future<void> _fetchUserDetails() async {
     try {
       UserDetails? userDetails =
-          await SignInSharedPreferences.getCurrentUserDetails();
+          await SignInSharedPreferences().getCurrentUserDetails();
       if (userDetails != null) {
         setState(() {
           _userDetails = userDetails;
@@ -400,7 +400,7 @@ class HomepageState extends State<Homepage> {
 
   buildVolunteerDashboard() {
     return FutureBuilder<List<VolunteeringEvent>?>(
-      future: VolunteeringEventDAO.getAllFutureVolunteeringEventsWithStatus(
+      future: VolunteeringEventDAO().getAllFutureVolunteeringEventsWithStatus(
           _userDetails?.UID ?? ''),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

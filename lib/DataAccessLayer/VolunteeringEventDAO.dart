@@ -4,10 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../Models/VolunteeringEvent.dart';
 
 class VolunteeringEventDAO {
-  static String defaultVolunteeringPhotoURL =
+  String defaultVolunteeringPhotoURL =
       "https://firebasestorage.googleapis.com/v0/b/votingsystem-bd00a.appspot.com/o/volunteering_photos%2Fdefault%20volunteering%20photo.png?alt=media&token=0c1e3b70-16cb-4037-a917-b6c594779387";
 
-  static Future<void> addVolunteeringEvent(
+  Future<void> addVolunteeringEvent(
       VolunteeringEvent volunteeringEvent) async {
     try {
       await FirebaseFirestore.instance
@@ -32,7 +32,7 @@ class VolunteeringEventDAO {
     }
   }
 
-  static Future<VolunteeringEvent?> getVolunteeringEvent(String eventId) async {
+  Future<VolunteeringEvent?> getVolunteeringEvent(String eventId) async {
     try {
       final DocumentSnapshot snapshot = await FirebaseFirestore.instance
           .doc('volunteeringEvents/$eventId')
@@ -48,7 +48,7 @@ class VolunteeringEventDAO {
     }
   }
 
-  static Future<List<VolunteeringEvent>?>
+  Future<List<VolunteeringEvent>?>
       getAllFutureVolunteeringEventsWithStatus(String userId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -62,7 +62,7 @@ class VolunteeringEventDAO {
         final VolunteeringEvent event = VolunteeringEvent.fromSnapshot(doc);
 
         final registration =
-            await VolunteeringEventRegistrationsDAO.getUserRegistrationStatus(
+            await VolunteeringEventRegistrationsDAO().getUserRegistrationStatus(
           userId: userId,
           eventId: doc.id,
         );
@@ -80,7 +80,7 @@ class VolunteeringEventDAO {
     }
   }
 
-  static Future<List<VolunteeringEvent>?>
+  Future<List<VolunteeringEvent>?>
       getAllFutureVolunteeringEvents() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -97,7 +97,7 @@ class VolunteeringEventDAO {
     }
   }
 
-  static Future<List<VolunteeringEvent>?> getEventsByOrganiserUID(
+  Future<List<VolunteeringEvent>?> getEventsByOrganiserUID(
       String organiserUID) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance

@@ -545,7 +545,7 @@ class _CreateVolunteeringEventFormState
         latitude: !online ? locationInputField.latitude! : 0,
         online: online,
       );
-      VolunteeringEventDAO.addVolunteeringEvent(volunteeringEvent);
+      VolunteeringEventDAO().addVolunteeringEvent(volunteeringEvent);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Volunteering event created successfully'),
       ));

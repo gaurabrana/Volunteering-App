@@ -107,7 +107,7 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
   Future<void> _fetchUserDetails() async {
     try {
-      UserDetails? userDetails = await UserDAO.getUserDetails(widget.UID);
+      UserDetails? userDetails = await UserDAO().getUserDetails(widget.UID);
       setState(() {
         _userDetails = userDetails;
         _isLoading = false; // Data fetched, no longer loading
@@ -178,11 +178,11 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
       // Fetch all registrations for the user
       final userId = FirebaseAuth.instance.currentUser!.uid;
       final registrations =
-          await VolunteeringEventRegistrationsDAO.getAllEventIdsForUser(userId);
+          await VolunteeringEventRegistrationsDAO().getAllEventIdsForUser(userId);
 
       // Process each registration
       for (final registration in registrations) {
-        final event = await VolunteeringEventDAO.getVolunteeringEvent(
+        final event = await VolunteeringEventDAO().getVolunteeringEvent(
             registration.eventId);
         if (event == null) continue;
 
@@ -691,7 +691,7 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
   }
 
   void _fetchOrganisationDetails(String userId) async {
-    var details = await UserDAO.fetchOrganisationDetails(userId);
+    var details = await UserDAO().fetchOrganisationDetails(userId);
     setState(() {
       organisationDetails = details;
     });

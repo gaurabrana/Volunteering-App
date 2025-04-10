@@ -84,56 +84,69 @@ class ForgotPasswordPopUpState extends State<ForgotPasswordPopUp> {
         actions: <Widget>[
           Form(
             key: _formKey,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.end, children: <Widget>[
-              EmailInputField(controller: _emailController, focusNode: FocusNode(), key: UniqueKey()),
-            ]),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  EmailInputField(
+                      controller: _emailController,
+                      focusNode: FocusNode(),
+                      key: UniqueKey()),
+                ]),
           ),
           Container(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
               alignment: Alignment.topRight,
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: <Widget>[
-                const Text('Reset',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    )),
-                const SizedBox(width: 15.0),
-                Container(
-                  height: 50,
-                  width: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                    onPressed: () async {
-                      String email = _emailController.text + UserDAO.defaultDomain;
-                      try {
-                        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Password reset email sent to $email'),
-                        ));
-                      } catch (error) {
-                        print('Error sending password reset email: $error');
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Failed to send password reset email'),
-                        ));
-                      }
-                      Navigator.of(context).pop(); // Close the dialog
-                    },
-                  ),
-                )
-              ]))
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    const Text('Reset',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        )),
+                    const SizedBox(width: 15.0),
+                    Container(
+                      height: 50,
+                      width: 100,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF8643FF), Color(0xFF4136F1)],
+                        ),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_forward,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                        onPressed: () async {
+                          String email =
+                              _emailController.text + UserDAO().defaultDomain;
+                          try {
+                            await FirebaseAuth.instance
+                                .sendPasswordResetEmail(email: email);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content:
+                                  Text('Password reset email sent to $email'),
+                            ));
+                          } catch (error) {
+                            print('Error sending password reset email: $error');
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                              content:
+                                  Text('Failed to send password reset email'),
+                            ));
+                          }
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                      ),
+                    )
+                  ]))
         ]);
   }
 }

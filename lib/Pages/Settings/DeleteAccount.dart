@@ -82,7 +82,7 @@ class DeleteAccountPopUpState extends State<DeleteAccountPopUp> {
                   child: Text('Delete account', style: TextStyle(color: Colors.white, fontSize: 20)),
                   onPressed: () async {
                     try {
-                      await UserDAO.deleteUser(FirebaseAuth.instance.currentUser!.uid);
+                      await UserDAO().deleteUser(FirebaseAuth.instance.currentUser!.uid);
                       deleteUserAccount();
                       logOutUser(context, widget.logInNavigatorKey,  widget.mainNavigatorKey);
                       Navigator.of(context).push(MaterialPageRoute(builder: (context) => SignInPage(logInNavigatorKey: widget.logInNavigatorKey, mainNavigatorKey:  widget.mainNavigatorKey,)));
