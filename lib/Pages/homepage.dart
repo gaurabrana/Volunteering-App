@@ -1,5 +1,3 @@
-import 'package:VolunteeringApp/DataAccessLayer/UserDAO.dart';
-import 'package:VolunteeringApp/DataAccessLayer/VolunteeringCauseDAO.dart';
 import 'package:VolunteeringApp/DataAccessLayer/VolunteeringEventDAO.dart';
 import 'package:VolunteeringApp/DataAccessLayer/VolunteeringHistoryDAO.dart';
 import 'package:VolunteeringApp/Pages/VolunteerAssignAndTrack.dart';
@@ -258,11 +256,13 @@ class HomepageState extends State<Homepage> {
                     color: Colors.blueAccent,
                   ),
                 ),
-                Text(
-                  "Role: ${history.role}",
-                  style: TextStyle(
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[600],
+                Flexible(
+                  child: Text(
+                    "Role: ${history.role}",
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ),
               ],
