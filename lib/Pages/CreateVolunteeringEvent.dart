@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:HeartOfExperian/DataAccessLayer/PhotoDAO.dart';
-import 'package:HeartOfExperian/Pages/CustomWidgets/BackButton.dart';
-import 'package:HeartOfExperian/Pages/common_helper.dart';
+import 'package:VolunteeringApp/DataAccessLayer/PhotoDAO.dart';
+import 'package:VolunteeringApp/Pages/CustomWidgets/BackButton.dart';
+import 'package:VolunteeringApp/Pages/common_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';

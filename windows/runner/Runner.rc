@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "HeartOfExperian" "\0"
+            VALUE "FileDescription", "VolunteeringApp" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "HeartOfExperian" "\0"
+            VALUE "InternalName", "VolunteeringApp" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "HeartOfExperian.exe" "\0"
-            VALUE "ProductName", "HeartOfExperian" "\0"
+            VALUE "OriginalFilename", "VolunteeringApp.exe" "\0"
+            VALUE "ProductName", "VolunteeringApp" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

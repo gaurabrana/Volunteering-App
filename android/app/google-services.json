@@ -52,6 +52,50 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:557866127065:android:3b5e602c4035f436f0f8c8",
+        "android_client_info": {
+          "package_name": "com.example.VolunteeringApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "557866127065-irlkrla8m9qn8hmfp8pmj4ih3s5lj47v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.VolunteeringApp",
+            "certificate_hash": "0fec616a32dcd0cd214e950fb9f288164e986d73"
+          }
+        },
+        {
+          "client_id": "557866127065-p7338982ps91ca62dkkeuanlj6go1quq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUo7_A-1LzKD3CkHDpSnBKYus3WJIAscg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "557866127065-p7338982ps91ca62dkkeuanlj6go1quq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "557866127065-77fmr0056ujjcimuo62iv82mt7jh2s17.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.votingSystem"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:557866127065:android:df57343bd1b98ad2f0f8c8",
         "android_client_info": {
           "package_name": "volunteer.impact"

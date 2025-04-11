@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventDAO.dart';
+import 'package:VolunteeringApp/DataAccessLayer/VolunteeringEventDAO.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

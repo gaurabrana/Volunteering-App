@@ -1,12 +1,12 @@
 // Import the test package and Counter class
-import 'package:HeartOfExperian/DataAccessLayer/UserDAO.dart';
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventDAO.dart';
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
-import 'package:HeartOfExperian/Models/UserDetails.dart';
-import 'package:HeartOfExperian/Models/VolunteeringEvent.dart';
-import 'package:HeartOfExperian/Models/VolunteeringEventRegistration.dart';
-import 'package:HeartOfExperian/Pages/Settings/SharedPreferences.dart';
-import 'package:HeartOfExperian/constants/enums.dart';
+import 'package:VolunteeringApp/DataAccessLayer/UserDAO.dart';
+import 'package:VolunteeringApp/DataAccessLayer/VolunteeringEventDAO.dart';
+import 'package:VolunteeringApp/DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
+import 'package:VolunteeringApp/Models/UserDetails.dart';
+import 'package:VolunteeringApp/Models/VolunteeringEvent.dart';
+import 'package:VolunteeringApp/Models/VolunteeringEventRegistration.dart';
+import 'package:VolunteeringApp/Pages/Settings/SharedPreferences.dart';
+import 'package:VolunteeringApp/constants/enums.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';

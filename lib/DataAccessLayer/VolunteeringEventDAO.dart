@@ -1,4 +1,4 @@
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
+import 'package:VolunteeringApp/DataAccessLayer/VolunteeringEventRegistrationsDAO.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../Models/VolunteeringEvent.dart';

@@ -1,6 +1,6 @@
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringHistoryDAO.dart';
-import 'package:HeartOfExperian/Models/VolunteeringEventRegistration.dart';
-import 'package:HeartOfExperian/Models/VolunteeringHistory.dart';
+import 'package:VolunteeringApp/DataAccessLayer/VolunteeringHistoryDAO.dart';
+import 'package:VolunteeringApp/Models/VolunteeringEventRegistration.dart';
+import 'package:VolunteeringApp/Models/VolunteeringHistory.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:confetti/confetti.dart';
 import 'package:firebase_auth/firebase_auth.dart';

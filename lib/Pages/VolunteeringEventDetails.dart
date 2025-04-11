@@ -1,10 +1,10 @@
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventFavouritesDAO.dart';
-import 'package:HeartOfExperian/Pages/Attendees.dart';
-import 'package:HeartOfExperian/Pages/ColleagueProfile.dart';
-import 'package:HeartOfExperian/Pages/CustomWidgets/EventLocationMap.dart';
-import 'package:HeartOfExperian/Pages/Settings/SharedPreferences.dart';
-import 'package:HeartOfExperian/Pages/common_helper.dart';
-import 'package:HeartOfExperian/Pages/review_rating.dart';
+import 'package:VolunteeringApp/DataAccessLayer/VolunteeringEventFavouritesDAO.dart';
+import 'package:VolunteeringApp/Pages/Attendees.dart';
+import 'package:VolunteeringApp/Pages/ColleagueProfile.dart';
+import 'package:VolunteeringApp/Pages/CustomWidgets/EventLocationMap.dart';
+import 'package:VolunteeringApp/Pages/Settings/SharedPreferences.dart';
+import 'package:VolunteeringApp/Pages/common_helper.dart';
+import 'package:VolunteeringApp/Pages/review_rating.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

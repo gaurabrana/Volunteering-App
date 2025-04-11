@@ -1,4 +1,4 @@
-import 'package:HeartOfExperian/constants/enums.dart';
+import 'package:VolunteeringApp/constants/enums.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserDetails {

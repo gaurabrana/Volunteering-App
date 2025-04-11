@@ -1,6 +1,6 @@
 {
-    "name": "HeartOfExperian",
-    "short_name": "HeartOfExperian",
+    "name": "VolunteeringApp",
+    "short_name": "VolunteeringApp",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,7 +1,7 @@
-import 'package:HeartOfExperian/Models/UserDetails.dart';
-import 'package:HeartOfExperian/Models/VolunteeringEvent.dart';
-import 'package:HeartOfExperian/Pages/RecordVolunteering.dart';
-import 'package:HeartOfExperian/Pages/common_helper.dart';
+import 'package:VolunteeringApp/Models/UserDetails.dart';
+import 'package:VolunteeringApp/Models/VolunteeringEvent.dart';
+import 'package:VolunteeringApp/Pages/RecordVolunteering.dart';
+import 'package:VolunteeringApp/Pages/common_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';

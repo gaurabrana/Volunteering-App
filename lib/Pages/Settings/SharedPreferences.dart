@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:HeartOfExperian/Models/UserDetails.dart';
+import 'package:VolunteeringApp/Models/UserDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInSharedPreferences {

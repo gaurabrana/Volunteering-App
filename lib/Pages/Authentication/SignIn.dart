@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:HeartOfExperian/Models/UserDetails.dart';
-import 'package:HeartOfExperian/Pages/Authentication/CreateAccount.dart';
-import 'package:HeartOfExperian/Pages/Settings/ForgotPassword.dart';
-import 'package:HeartOfExperian/Pages/common_helper.dart';
-import 'package:HeartOfExperian/constants/enums.dart';
+import 'package:VolunteeringApp/Models/UserDetails.dart';
+import 'package:VolunteeringApp/Pages/Authentication/CreateAccount.dart';
+import 'package:VolunteeringApp/Pages/Settings/ForgotPassword.dart';
+import 'package:VolunteeringApp/Pages/common_helper.dart';
+import 'package:VolunteeringApp/constants/enums.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';

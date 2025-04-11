@@ -1,5 +1,5 @@
-import 'package:HeartOfExperian/Pages/Settings/DeleteAccount.dart';
-import 'package:HeartOfExperian/Pages/Settings/ResetPassword.dart';
+import 'package:VolunteeringApp/Pages/Settings/DeleteAccount.dart';
+import 'package:VolunteeringApp/Pages/Settings/ResetPassword.dart';
 import 'package:flutter/material.dart';
 
 import '../../DataAccessLayer/FeedbackDAO.dart';

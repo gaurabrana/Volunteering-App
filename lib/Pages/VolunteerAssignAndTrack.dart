@@ -1,5 +1,5 @@
-import 'package:HeartOfExperian/DataAccessLayer/VolunteeringEventDAO.dart';
-import 'package:HeartOfExperian/Models/VolunteeringEvent.dart';
+import 'package:VolunteeringApp/DataAccessLayer/VolunteeringEventDAO.dart';
+import 'package:VolunteeringApp/Models/VolunteeringEvent.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
