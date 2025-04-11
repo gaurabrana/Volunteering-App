@@ -5,6 +5,7 @@ import 'package:VolunteeringApp/Pages/CustomWidgets/EventLocationMap.dart';
 import 'package:VolunteeringApp/Pages/Settings/SharedPreferences.dart';
 import 'package:VolunteeringApp/Pages/common_helper.dart';
 import 'package:VolunteeringApp/Pages/review_rating.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +13,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../DataAccessLayer/UserDAO.dart';
@@ -25,6 +25,7 @@ import '../Models/VolunteeringEventRegistration.dart';
 import '../constants/enums.dart';
 import 'AssignVolunteers.dart';
 import 'CustomWidgets/BackButton.dart';
+import 'review_screen.dart';
 
 class VolunteeringEventDetailsPage extends StatefulWidget {
   final VolunteeringEvent volunteeringEvent;
@@ -50,6 +51,7 @@ class VolunteeringEventDetailsPageState
   bool isCurrentUserOwner = false;
   bool isCurrentUserAnOrganisation = false;
   List<VolunteeringEventRegistration> attendeesList = [];
+  List<Map<String, dynamic>> allReviews = [];
 
   @override
   void initState() {
@@ -61,6 +63,7 @@ class VolunteeringEventDetailsPageState
     await fetchOrganiserDetails();
     await fetchAttendees();
     await fetchIsFavourite();
+    await _fetchAllReviews();
   }
 
   Future<void> fetchOrganiserDetails() async {
@@ -87,9 +90,8 @@ class VolunteeringEventDetailsPageState
   Future<void> fetchAttendees() async {
     try {
       List<UserDetails> attendees = [];
-      attendeesList =
-          await VolunteeringEventRegistrationsDAO().getAllUserIdsForEvent(
-              widget.volunteeringEvent.reference!.id);
+      attendeesList = await VolunteeringEventRegistrationsDAO()
+          .getAllUserIdsForEvent(widget.volunteeringEvent.reference!.id);
       List<String> attendeeIds = attendeesList.map((e) => e.userId).toList();
       if (attendeeIds.contains(FirebaseAuth.instance.currentUser!.uid)) {
         setState(() {
@@ -161,6 +163,8 @@ class VolunteeringEventDetailsPageState
                       buildDate(),
                       const SizedBox(height: 20),
                       buildOrganiser(),
+                      const SizedBox(height: 20),
+                      buildReviewAndRating(context),
                       const SizedBox(height: 20),
                       buildAttendeesList(),
                       const SizedBox(height: 20),
@@ -779,6 +783,8 @@ class VolunteeringEventDetailsPageState
                                               .volunteeringEvent.reference!.id,
                                           eventName:
                                               widget.volunteeringEvent.name,
+                                          reviewerName: FirebaseAuth.instance
+                                              .currentUser!.displayName!,
                                         )),
                               );
                               return;
@@ -955,6 +961,103 @@ class VolunteeringEventDetailsPageState
   String formatDate(DateTime date) {
     // Format the date as needed (e.g., 'MM/dd/yyyy')
     return '${date.month}/${date.day}/${date.year}';
+  }
+
+  Widget buildReviewAndRating(BuildContext context) {
+    return allReviews.isEmpty
+        ? SizedBox.shrink()
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Icon and Total Rating
+              Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    getTotalRating(allReviews).toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Button to go to review screen
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ReviewsScreen(allReviews: allReviews),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.arrow_forward),
+                label: Text('View Reviews'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8), // Adjust padding for better UI
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
+
+  Future<void> _fetchAllReviews() async {
+    try {
+      // Base Firestore collection reference
+      CollectionReference reviews =
+          FirebaseFirestore.instance.collection('reviews');
+
+      // Fetch all reviews for the specified event
+      Query reviewQuery = reviews.where('eventId',
+          isEqualTo: widget.volunteeringEvent.reference.id);
+
+      // Execute the query
+      QuerySnapshot reviewSnapshot = await reviewQuery.get();
+
+      if (reviewSnapshot.docs.isNotEmpty) {
+        // Process all fetched reviews
+        for (var doc in reviewSnapshot.docs) {
+          final reviewData = doc.data() as Map<String, dynamic>;
+          print(
+              "Review: ${reviewData['review']}, Rating: ${reviewData['rating']}");
+        }
+
+        // Example: Update state or handle reviews as needed
+        setState(() {
+          // Use the data as required, such as populating a list
+          allReviews = reviewSnapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
+        });
+      }
+    } catch (e) {
+      print("Failed to fetch reviews: $e");
+    }
+  }
+
+  double getTotalRating(List<Map<String, dynamic>> allReviews) {
+    // Ensure that allReviews is not empty
+    if (allReviews.isEmpty) return 0.0;
+
+    // Sum up all the ratings, assuming `rating` is a numeric field
+    double totalRating = allReviews.fold(0.0, (sum, review) {
+      return sum + (review['rating'] ?? 0.0);
+    });
+
+    return totalRating;
   }
 }
 // todo edit details if youre the orgniaser.

@@ -110,24 +110,6 @@ class HomepageState extends State<Homepage> {
         ),
         const SizedBox(height: 25),
 
-        // Performance Widgets
-        _buildPerformanceCard(
-          title: "Volunteer Recruitment",
-          percentage: 76,
-          color: Colors.blueAccent,
-        ),
-        _buildPerformanceCard(
-          title: "Project Delivery Effectiveness",
-          percentage: 89,
-          color: Colors.green,
-        ),
-        _buildPerformanceCard(
-          title: "Financial Development Drive",
-          percentage: 64,
-          color: Colors.deepOrange,
-        ),
-        const SizedBox(height: 30),
-
         const Text(
           'Volunteer Management',
           style: TextStyle(
@@ -181,25 +163,6 @@ class HomepageState extends State<Homepage> {
             color: const Color(0xFF4136F1),
           ),
         ),
-      ),
-    );
-  }
-
-// Performance Card Widget
-  Widget _buildPerformanceCard(
-      {required String title, required int percentage, required Color color}) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        leading: CircularProgressIndicator(
-          value: percentage / 100,
-          backgroundColor: Colors.grey[300],
-          color: color,
-        ),
-        title: Text(title),
-        trailing:
-            Text("$percentage%", style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -400,8 +363,8 @@ class HomepageState extends State<Homepage> {
 
   buildVolunteerDashboard() {
     return FutureBuilder<List<VolunteeringEvent>?>(
-      future: VolunteeringEventDAO().getAllFutureVolunteeringEventsWithStatus(
-          _userDetails?.UID ?? ''),
+      future: VolunteeringEventDAO()
+          .getAllFutureVolunteeringEventsWithStatus(_userDetails?.UID ?? ''),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           // While loading, show a loading indicator

@@ -1,7 +1,8 @@
+import 'package:VolunteeringApp/Pages/review_rating.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../DataAccessLayer/PhotoDAO.dart';
@@ -13,10 +14,9 @@ import '../Models/UserDetails.dart';
 import '../Models/VolunteeringEvent.dart';
 import '../Models/VolunteeringHistory.dart';
 import '../constants/enums.dart';
-import 'CustomWidgets/VolunteeringGraph.dart';
 import 'CustomWidgets/VolunteeringTypePieChart.dart';
-import 'Settings/SharedPreferences.dart';
 import 'VolunteeringEventDetails.dart';
+import 'review_screen.dart';
 
 class ColleagueProfilePage extends StatefulWidget {
   final String UID;
@@ -44,7 +44,7 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
   TextEditingController financialYearTextEditingController =
       new TextEditingController();
-  int _financialYearShownOnGraph = 24;
+
   int selectedYearIndex = 0;
 
   late List<VolunteeringEvent> upcomingVolunteeringEvents = [];
@@ -55,6 +55,7 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
   UserDetails? _userDetails; // Store the user details
   bool _isLoading = true; // Loading state
   Map<String, dynamic>? organisationDetails;
+  List<Map<String, dynamic>> allReviews = [];
 
   @override
   void initState() {
@@ -73,7 +74,6 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
       areHistoricalHoursDetailsLoading = true;
       isVolunteeringHistoryLoading = true;
       _volunteeringHistory = [];
-      _financialYearShownOnGraph = 24;
       upcomingVolunteeringEvents = [];
       completedVolunteeringEvents = [];
       areVolunteeringEventsLoading = true;
@@ -84,7 +84,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
   Future<void> _fetchData() async {
     _initialiseData();
-    _fetchUserDetails();
+    await _fetchUserDetails();
+    await _fetchAllReviews();
 
     await _fetchProfilePhoto();
     await _fetchHistoricalHours();
@@ -177,13 +178,13 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
 
       // Fetch all registrations for the user
       final userId = FirebaseAuth.instance.currentUser!.uid;
-      final registrations =
-          await VolunteeringEventRegistrationsDAO().getAllEventIdsForUser(userId);
+      final registrations = await VolunteeringEventRegistrationsDAO()
+          .getAllEventIdsForUser(userId);
 
       // Process each registration
       for (final registration in registrations) {
-        final event = await VolunteeringEventDAO().getVolunteeringEvent(
-            registration.eventId);
+        final event = await VolunteeringEventDAO()
+            .getVolunteeringEvent(registration.eventId);
         if (event == null) continue;
 
         if (registration.isAssigned) {
@@ -226,7 +227,23 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
   @override
   Widget build(context) {
     return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          actions: [
+            if (!_isLoading && _userDetails != null)
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => ReviewAndRating(
+                        reviewerName:
+                            FirebaseAuth.instance.currentUser!.displayName!,
+                        organiserId: _userDetails!.UID,
+                        organiserName: _userDetails!.name,
+                      ),
+                    ));
+                  },
+                  child: Text("Review")),
+          ],
+        ),
         body: RefreshIndicator(
             onRefresh: _fetchData,
             child: SingleChildScrollView(
@@ -391,25 +408,6 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
                   volunteeringEvents: allEvents,
                 ))
             : Container();
-  }
-
-  List<int> getRecentFinancialYears() {
-    int currentYear = DateTime.now().year;
-    int currentMonth = DateTime.now().month;
-    int currentFY;
-    List<int> recentYears = [];
-
-    if (currentMonth >= 4) {
-      currentFY = currentYear + 1;
-    } else {
-      currentFY = currentYear;
-    }
-
-    for (int i = 0; i <= 5; i++) {
-      recentYears.add((currentFY - i) % 100);
-    }
-
-    return recentYears;
   }
 
   Widget buildEventCard(BuildContext context, dynamic event) {
@@ -629,6 +627,8 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
       return Column(
         children: [
           buildProfileName(context, _userDetails!.name),
+          if (_userDetails!.role == UserRole.organisation)
+          buildStarAndReview(context),
           if (_userDetails!.role == UserRole.user) ...buildUserProfile(),
           if (_userDetails!.role == UserRole.organisation)
             ...buildOrganisationDetails(),
@@ -695,5 +695,102 @@ class ColleagueProfilePageState extends State<ColleagueProfilePage> {
     setState(() {
       organisationDetails = details;
     });
+  }
+
+  Future<void> _fetchAllReviews() async {
+    try {
+      // Base Firestore collection reference
+      CollectionReference reviews =
+          FirebaseFirestore.instance.collection('reviews');
+
+      // Fetch all reviews for the specified event
+      Query reviewQuery =
+          reviews.where('organisationId', isEqualTo: _userDetails!.UID);
+
+      // Execute the query
+      QuerySnapshot reviewSnapshot = await reviewQuery.get();
+
+      if (reviewSnapshot.docs.isNotEmpty) {
+        // Process all fetched reviews
+        for (var doc in reviewSnapshot.docs) {
+          final reviewData = doc.data() as Map<String, dynamic>;
+          print(
+              "Review: ${reviewData['review']}, Rating: ${reviewData['rating']}");
+        }
+
+        // Example: Update state or handle reviews as needed
+        setState(() {
+          // Use the data as required, such as populating a list
+          allReviews = reviewSnapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
+        });
+      }
+    } catch (e) {
+      print("Failed to fetch reviews: $e");
+    }
+  }
+
+  double getTotalRating(List<Map<String, dynamic>> allReviews) {
+    // Ensure that allReviews is not empty
+    if (allReviews.isEmpty) return 0.0;
+
+    // Sum up all the ratings, assuming `rating` is a numeric field
+    double totalRating = allReviews.fold(0.0, (sum, review) {
+      return sum + (review['rating'] ?? 0.0);
+    });
+
+    return totalRating;
+  }
+
+  Widget buildStarAndReview(BuildContext context) {
+    return allReviews.isEmpty
+        ? SizedBox.shrink()
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Icon and Total Rating
+              Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    getTotalRating(allReviews).toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Button to go to review screen
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ReviewsScreen(allReviews: allReviews),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.arrow_forward),
+                label: Text('View Reviews'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8), // Adjust padding for better UI
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          );
   }
 }

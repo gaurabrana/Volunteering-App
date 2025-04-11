@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -18,6 +19,7 @@ import 'Settings/EditProfile.dart';
 import 'Settings/Settings.dart';
 import 'Settings/SharedPreferences.dart';
 import 'VolunteeringEventDetails.dart';
+import 'review_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   final GlobalKey<NavigatorState> mainNavigatorKey;
@@ -60,6 +62,7 @@ class ProfilePageState extends State<ProfilePage> {
   UserDetails? _userDetails; // Store the user details
   bool _isLoading = true; // Loading state
   Map<String, dynamic>? organisationDetails;
+  List<Map<String, dynamic>> allReviews = [];
 
   @override
   void initState() {
@@ -89,7 +92,8 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchData() async {
     _initialiseData();
-    _fetchUserDetails();
+    await _fetchUserDetails();
+    await _fetchAllReviews();
 
     await _fetchProfilePhoto();
     await _fetchHistoricalHours();
@@ -186,13 +190,13 @@ class ProfilePageState extends State<ProfilePage> {
 
       // Fetch all registrations for the user
       final userId = FirebaseAuth.instance.currentUser!.uid;
-      final registrations =
-          await VolunteeringEventRegistrationsDAO().getAllEventIdsForUser(userId);
+      final registrations = await VolunteeringEventRegistrationsDAO()
+          .getAllEventIdsForUser(userId);
 
       // Process each registration
       for (final registration in registrations) {
-        final event = await VolunteeringEventDAO().getVolunteeringEvent(
-            registration.eventId);
+        final event = await VolunteeringEventDAO()
+            .getVolunteeringEvent(registration.eventId);
         if (event == null) continue;
 
         if (registration.isAssigned) {
@@ -420,49 +424,6 @@ class ProfilePageState extends State<ProfilePage> {
         ),
       ],
     );
-  }
-
-  Widget buildVolunteeringGraph(BuildContext context) {
-    return isVolunteeringHistoryLoading
-        ? const CircularProgressIndicator()
-        : Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.all(10.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 10,
-                  blurRadius: 15,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(children: [
-              Container(
-                  padding: const EdgeInsets.only(
-                    top: 10,
-                    left: 10,
-                    right: 10,
-                  ),
-                  child: Row(children: [
-                    Text(
-                      "FY$_financialYearShownOnGraph",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Spacer(),
-                    buildFilterButton(context),
-                  ])),
-              YearVolunteeringHistoryLineGraph(
-                volunteeringHistory: _volunteeringHistory,
-                financialYear: _financialYearShownOnGraph,
-              ),
-            ]));
   }
 
   Widget buildVolunteeringTypePieChart(BuildContext context) {
@@ -869,7 +830,6 @@ class ProfilePageState extends State<ProfilePage> {
     return [
       buildHistoricalHoursSection(context),
       const SizedBox(height: 25),
-      buildVolunteeringGraph(context),
       const SizedBox(height: 25),
       buildAppliedVolunteering(context),
       const SizedBox(height: 25),
@@ -910,6 +870,8 @@ class ProfilePageState extends State<ProfilePage> {
       return Column(
         children: [
           buildProfileName(context, _userDetails!.name),
+          if (_userDetails!.role == UserRole.organisation)
+            buildStarAndReview(context),
           if (_userDetails!.role == UserRole.user) ...buildUserProfile(),
           if (_userDetails!.role == UserRole.organisation &&
               organisationDetails == null)
@@ -927,9 +889,7 @@ class ProfilePageState extends State<ProfilePage> {
                   child: Text(
                     "Complete your profile in profile setting",
                     style: TextStyle(
-                      fontSize: 16,
-                      decoration: TextDecoration.underline
-                    ),
+                        fontSize: 16, decoration: TextDecoration.underline),
                   ),
                 ),
               ),
@@ -1000,5 +960,102 @@ class ProfilePageState extends State<ProfilePage> {
     setState(() {
       organisationDetails = details;
     });
+  }
+
+  Widget buildStarAndReview(BuildContext context) {
+    return allReviews.isEmpty
+        ? SizedBox.shrink()
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Icon and Total Rating
+              Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    getTotalRating(allReviews).toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Button to go to review screen
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ReviewsScreen(allReviews: allReviews),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.arrow_forward),
+                label: Text('View Reviews'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8), // Adjust padding for better UI
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
+
+  Future<void> _fetchAllReviews() async {
+    try {
+      // Base Firestore collection reference
+      CollectionReference reviews =
+          FirebaseFirestore.instance.collection('reviews');
+
+      // Fetch all reviews for the specified event
+      Query reviewQuery =
+          reviews.where('organisationId', isEqualTo: _userDetails!.UID);
+
+      // Execute the query
+      QuerySnapshot reviewSnapshot = await reviewQuery.get();
+
+      if (reviewSnapshot.docs.isNotEmpty) {
+        // Process all fetched reviews
+        for (var doc in reviewSnapshot.docs) {
+          final reviewData = doc.data() as Map<String, dynamic>;
+          print(
+              "Review: ${reviewData['review']}, Rating: ${reviewData['rating']}");
+        }
+
+        // Example: Update state or handle reviews as needed
+        setState(() {
+          // Use the data as required, such as populating a list
+          allReviews = reviewSnapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
+        });
+      }
+    } catch (e) {
+      print("Failed to fetch reviews: $e");
+    }
+  }
+
+  double getTotalRating(List<Map<String, dynamic>> allReviews) {
+    // Ensure that allReviews is not empty
+    if (allReviews.isEmpty) return 0.0;
+
+    // Sum up all the ratings, assuming `rating` is a numeric field
+    double totalRating = allReviews.fold(0.0, (sum, review) {
+      return sum + (review['rating'] ?? 0.0);
+    });
+
+    return totalRating;
   }
 }

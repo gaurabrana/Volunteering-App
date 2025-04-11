@@ -10,6 +10,7 @@ class ReviewAndRating extends StatefulWidget {
   final String? organiserId;
   final String? eventName;
   final String? organiserName;
+  final String reviewerName;
 
   const ReviewAndRating({
     super.key,
@@ -17,6 +18,7 @@ class ReviewAndRating extends StatefulWidget {
     this.organiserId,
     this.eventName,
     this.organiserName,
+    required this.reviewerName,
   });
 
   @override
@@ -71,7 +73,7 @@ class _ReviewAndRatingState extends State<ReviewAndRating> {
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(
-          "Review your work experience",
+          "Review ${widget.organiserId != null ? "this organisation" : "your work experience"}",
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -173,20 +175,40 @@ class _ReviewAndRatingState extends State<ReviewAndRating> {
   }
 
   Future<void> _fetchExistingReview() async {
+    // Ensure at least one of organiserId or eventId is not null
     if (widget.organiserId == null && widget.eventId == null) {
       return;
     }
 
     try {
-      // Query Firestore to fetch the existing review
-      QuerySnapshot reviewSnapshot = await FirebaseFirestore.instance
-          .collection('reviews')
-          .where('userId',
-              isEqualTo: userId) // Replace with logged-in user's ID
-          .where('organisationId', isEqualTo: widget.organiserId)
-          .where('eventId', isEqualTo: widget.eventId)
-          .limit(1)
-          .get();
+      // Base Firestore collection reference
+      CollectionReference reviews =
+          FirebaseFirestore.instance.collection('reviews');
+
+      Query? reviewQuery;
+
+      // Assign reviewQuery based on which field is non-null
+      if (widget.organiserId != null) {
+        reviewQuery = reviews
+            .where('userId',
+                isEqualTo: userId) // Replace with logged-in user's ID
+            .where('organisationId', isEqualTo: widget.organiserId)
+            .limit(1);
+      } else if (widget.eventId != null) {
+        reviewQuery = reviews
+            .where('userId',
+                isEqualTo: userId) // Replace with logged-in user's ID
+            .where('eventId', isEqualTo: widget.eventId)
+            .limit(1);
+      }
+
+      // Check if reviewQuery is null (should not happen)
+      if (reviewQuery == null) {
+        throw Exception("reviewQuery was not assigned.");
+      }
+
+      // Execute the query
+      QuerySnapshot reviewSnapshot = await reviewQuery.get();
 
       if (reviewSnapshot.docs.isNotEmpty) {
         // Populate the fields if a review exists
@@ -194,7 +216,7 @@ class _ReviewAndRatingState extends State<ReviewAndRating> {
             reviewSnapshot.docs.first.data() as Map<String, dynamic>;
         setState(() {
           existingDocId = reviewSnapshot.docs.first.id;
-          _reviewController.text = reviewData['review'];
+          _reviewController.text = reviewData['review'] ?? '';
           _rating = reviewData['rating'] ?? 0.0;
         });
       }
@@ -226,6 +248,7 @@ class _ReviewAndRatingState extends State<ReviewAndRating> {
         'organisationId': organisationId,
         'eventId': eventId,
         'timestamp': FieldValue.serverTimestamp(), // Add a timestamp
+        'userName': widget.reviewerName
       };
 
       if (existingDocId.isNotEmpty) {
@@ -252,9 +275,8 @@ class _ReviewAndRatingState extends State<ReviewAndRating> {
   Widget buildWorkRecord() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(5)
-      ),      
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(5)),
       child: ListView.builder(
         itemCount: workHistory.length,
         itemBuilder: (context, index) {
