@@ -199,14 +199,14 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
   void _register() async {
     try {
       final user = (await _auth.createUserWithEmailAndPassword(
-              email: ("${_emailController.text}@experian.com"),
+              email: ("${_emailController.text}@gmail.com"),
               password: _passwordController.text))
           .user;
       if (user != null) {
         await UserDAO().storeUserDetails(
           user.uid,
           _userNameController.text,
-          ("${_emailController.text}@experian.com"),
+          ("${_emailController.text}@gmail.com"),
           _userRole,
         );
         UserDetails? userDetail = await UserDAO().getUserDetails(user.uid);

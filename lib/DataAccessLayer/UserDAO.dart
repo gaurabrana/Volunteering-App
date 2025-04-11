@@ -4,7 +4,7 @@ import '../Models/UserDetails.dart';
 import 'PhotoDAO.dart';
 
 class UserDAO {
-  String defaultDomain = "@experian.com";
+  String defaultDomain = "@gmail.com";
 
   Future<void> storeUserDetails(
       String userId, String userName, String email, String role,

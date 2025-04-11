@@ -137,7 +137,7 @@ class EditProfilePageState extends State<EditProfilePage> {
           _currentEmail = userDetails.email;
           _nameController = TextEditingController(text: _currentName);
           _emailController = TextEditingController(
-              text: _currentEmail?.replaceAll('@experian.com', ''));
+              text: _currentEmail?.replaceAll('@gmail.com', ''));
         }
         isNameLoading = false;
         isEmailLoading = false;
